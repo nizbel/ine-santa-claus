@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=ine
+      - POSTGRES_USER=nizbel
+      - POSTGRES_PASSWORD=123
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./dbteste:/var/lib/postgresql/data
+    networks:
+      - postgres-compose-network
+
+  teste-pgadmin-compose:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "test@test.com"
+      PGADMIN_DEFAULT_PASSWORD: "123"
+    ports:
+      - "16543:80"
+    depends_on:
+      - db
+    networks:
+      - postgres-compose-network
+
+networks:
+  postgres-compose-network:
+    driver: bridge

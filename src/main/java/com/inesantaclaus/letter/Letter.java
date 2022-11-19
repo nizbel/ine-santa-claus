@@ -1,5 +1,7 @@
 package com.inesantaclaus.letter;
 
+import java.util.List;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 
@@ -21,12 +23,22 @@ public class Letter {
 
   private String giftSuggestion;
 
-  @NotBlank
-  private String imagePath;
+  @ElementCollection
+  private List<String> imagePath;
 
-  public Letter(String name, String imagePath) {
+  public Letter() {
+    
+  }
+
+  public Letter(String name, String ineClass, List<String> imagePath) {
     this.name = name;
+    this.ineClass = ineClass;
     this.imagePath = imagePath;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s from %s wants %s", name, ineClass, giftSuggestion);
   }
 
   public int getId() {
@@ -45,11 +57,11 @@ public class Letter {
     this.name = name;
   }
 
-  public String getImagePath() {
+  public List<String> getImagePath() {
     return imagePath;
   }
 
-  public void setImagePath(String imagePath) {
+  public void setImagePath(List<String> imagePath) {
     this.imagePath = imagePath;
   }
   

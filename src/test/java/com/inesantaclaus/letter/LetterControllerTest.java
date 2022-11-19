@@ -26,6 +26,9 @@ public class LetterControllerTest {
 	@Autowired
 	private MockMvc mvc;
 
+	/*
+	 * Details
+	 */
 	@Test
 	public void getDetail() throws Exception {
 		mvc.perform(MockMvcRequestBuilders.get(baseUrl).param("name", "John").accept(MediaType.APPLICATION_JSON))
@@ -46,6 +49,9 @@ public class LetterControllerTest {
 				.andExpect(status().isNotFound());
 	}
 
+	/*
+	 * Listing
+	 */
 	@Test
 	public void getList() throws Exception {
 		mvc.perform(MockMvcRequestBuilders.get(baseUrl + "/list").accept(MediaType.APPLICATION_JSON))

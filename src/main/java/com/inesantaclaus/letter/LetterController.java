@@ -1,11 +1,13 @@
 package com.inesantaclaus.letter;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -13,25 +15,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/letters")
 public class LetterController {
 
+  @Autowired
+  LetterService service;
+
   @GetMapping("/{id}")
-  public Letter detail(@PathVariable int id) {
-    if (id == 1) {
-      return new Letter("John", "/aws/random/path");
-    }
-    return null;
+  public Letter detail(@PathVariable long id) {
+    return service.detailLetter(id);
   }
 
   @GetMapping("/list")
   public List<Letter> list() {
-    // Generate random list
-    ArrayList<Letter> letters = new ArrayList<Letter>();
+    return service.listLetters();
+  }
 
-    Random rand = new Random();
-    for (int i = 0; i < 10; i++) {
-      int randomValue = rand.nextInt(100);
-      letters.add(new Letter("John" + randomValue, "/aws/random/path/" + randomValue));
-    }
-
-    return letters;
+  @PostMapping("/add")
+	@PreAuthorize("hasRole('ADMIN')")
+  public Letter create(@RequestBody Letter letter) {
+    return service.create(letter);
   }
 }

@@ -34,6 +34,8 @@ public class UserDetailsImpl implements UserDetails {
 		this.id = id;
 		this.username = username;
 		this.password = password;
+		this.name = name;
+		this.phone = phone;
 
 		this.authorities = authorities;
 	}

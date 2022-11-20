@@ -48,3 +48,6 @@ my-app/
 target/
 
 env.properties
+
+# Image files
+*.jpeg

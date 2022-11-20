@@ -51,8 +51,8 @@ public class AuthController {
 	@Autowired
 	JwtUtils jwtUtils;
 
-	@PostMapping("/signin")
-	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+	@PostMapping("/login")
+	public ResponseEntity<?> authenticateUser(@RequestBody @Valid LoginRequest loginRequest) {
 
 		Authentication authentication = authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
@@ -66,11 +66,11 @@ public class AuthController {
 				.collect(Collectors.toList());
 
 		return ResponseEntity.ok(new JwtResponse(jwt, 
-												 userDetails.getId(), 
-												 userDetails.getUsername(), 
-                         userDetails.getName(), 
-                         userDetails.getPhone(),
-												 roles));
+				userDetails.getId(), 
+				userDetails.getUsername(), 
+				userDetails.getName(), 
+				userDetails.getPhone(),
+				roles));
 	}
 
 	@PostMapping("/signup")

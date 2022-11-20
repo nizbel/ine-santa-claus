@@ -5,6 +5,8 @@ import java.util.List;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 
+import com.inesantaclaus.user.User;
+
 @Entity
 @Table(name = "letters", 
   uniqueConstraints = { 
@@ -21,13 +23,19 @@ public class Letter {
   @NotBlank
   private String ineClass;
 
+  private int age;
+
   private String giftSuggestion;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id")
+  private User adopter;
 
   @ElementCollection
   private List<String> imagePath;
 
   public Letter() {
-    
+
   }
 
   public Letter(String name, String ineClass, List<String> imagePath) {
@@ -71,6 +79,22 @@ public class Letter {
 
   public void setIneClass(String ineClass) {
     this.ineClass = ineClass;
+  }
+
+  public int getAge() {
+    return age;
+  }
+
+  public void setAge(int age) {
+    this.age = age;
+  }
+
+  public User getAdopter() {
+    return adopter;
+  }
+
+  public void setAdopter(User adopter) {
+    this.adopter = adopter;
   }
 
   public String getGiftSuggestion() {

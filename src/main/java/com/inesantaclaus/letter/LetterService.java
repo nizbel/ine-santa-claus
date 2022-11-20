@@ -22,4 +22,8 @@ public class LetterService {
   public Letter create(Letter letter) {
     return repository.save(letter);
   }
+
+  public Letter edit(Letter letter) {
+    return repository.save(letter);
+  }
 }

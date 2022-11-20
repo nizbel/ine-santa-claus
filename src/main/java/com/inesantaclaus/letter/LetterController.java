@@ -33,4 +33,13 @@ public class LetterController {
   public Letter create(@RequestBody Letter letter) {
     return service.create(letter);
   }
+
+  @PostMapping("/edit/{id}") 
+	@PreAuthorize("hasRole('ADMIN')")
+  public Letter edit(@RequestBody Letter letter, @PathVariable long id) throws Exception {
+    if (letter.getId() != id) {
+      throw new Exception("Carta inválida");
+    }
+    return service.edit(letter);
+  }
 }

@@ -45,10 +45,9 @@ sketch
 # End of https://www.toptal.com/developers/gitignore/api/react,java
 
 target/
-
 env.properties
-
 config.js
+run.sh
 
 # Image files
 *.jpeg

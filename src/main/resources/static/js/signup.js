@@ -16,7 +16,7 @@ class SignupForm extends React.Component {
         phone: '',
         userType: '',
       },
-      requestMessage: ''
+      responseMessage: ''
     };
   }
 
@@ -63,11 +63,17 @@ class SignupForm extends React.Component {
     if (this.state.username.length < 3 || this.state.username.length > 20) {
       messages.username = 'Usuário deve ter de 3 a 20 dígitos';
       valid = false;
+    } else if (this.state.username.indexOf(' ') > -1) {
+      messages.username = 'Usuário não deve conter espaços';
+      valid = false;
     }
 
     // Validate password
     if (this.state.password.length < 6 || this.state.password.length > 40) {
       messages.password = 'Senha deve ter de 6 a 40 dígitos';
+      valid = false;
+    } else if (this.state.password.indexOf(' ') > -1) {
+      messages.password = 'Senha não deve conter espaços';
       valid = false;
     }
     if (this.state.password != this.state.password1) {
@@ -76,7 +82,7 @@ class SignupForm extends React.Component {
     }
 
     // Validate name
-    if (this.state.name.length == 0) {
+    if (this.state.name.trim().length == 0) {
       messages.name = 'Nome deve ser preenchido';
       valid = false;
     }
@@ -101,25 +107,22 @@ class SignupForm extends React.Component {
   handleSubmit(event) {
     event.preventDefault();
 
-    console.log(this.state);
-
     if (!this.validateForm()) {
       return;
     }
 
     this.setState({
-      requestMessage: ''
+      responseMessage: ''
     })
 
     // Remove control attributes from state to make signup request
-    const {password1, messages, ...signupRequest} = this.state;
+    const {password1, messages, responseMessage, ...signupRequest} = this.state;
 
     // Make signup request
-    axios.post('http://localhost:8080/auth/signup', signupRequest)
+    axios.post(baseUrl + '/auth/signup', signupRequest)
     .then(response => {
-
       // Make login request
-      axios.post('http://localhost:8080/auth/login', this.state)
+      axios.post(baseUrl + '/auth/login', this.state)
       .then(response => {
         // handle success
         setUser(response.data);
@@ -128,7 +131,7 @@ class SignupForm extends React.Component {
       .catch(error => {
         // handle error
         this.setState({
-          requestMessage: error.response.data.message
+          responseMessage: error.response.data.message
         })
 
       });
@@ -136,7 +139,7 @@ class SignupForm extends React.Component {
     .catch(error => {
       // handle error
       this.setState({
-        requestMessage: error.response.data.message
+        responseMessage: error.response.data.message
       })
     });
   }
@@ -155,7 +158,7 @@ class SignupForm extends React.Component {
       <form method="post" className="needs-validation" onSubmit={(e) => this.handleSubmit(e)}>
         <h1 className="h3 mb-3 fw-normal">Novo cadastro</h1>
     
-        <p className="ms-1 text-start text-danger">{this.state.requestMessage}</p>
+        <p className="ms-1 text-start text-danger">{this.state.responseMessage}</p>
         <div className="form-floating mb-3">
           <input type="text" className="form-control" name="name" value={this.state.name} 
             placeholder="" onChange={(e) => this.handleInputChange(e)}/>

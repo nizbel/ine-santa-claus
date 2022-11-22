@@ -7,12 +7,14 @@ class SignupForm extends React.Component {
       password1: '',
       name: '',
       phone: '',
+      userType: '',
       messages: {
         username: '',
         password: '',
         password1: '',
         name: '',
         phone: '',
+        userType: '',
       },
       requestMessage: ''
     };
@@ -29,8 +31,20 @@ class SignupForm extends React.Component {
   handlePhoneInputChange(event) {
     event.preventDefault();
     const target = event.target;
+    let newValue = target.value.replace(/\D/g, '');
+
+    // Change value if string incremented or decremented
+    newValue = (target.value.length > target.defaultValue.length ?
+      newValue.substring(0, 11) : newValue.substring(0, newValue.length-1));
+
     this.setState({
-      [target.name]: target.value.replace(/\D/g, '').substring(0, 11),
+      [target.name]: newValue
+    });
+  }
+
+  handleUserTypeInputChange(event) {
+    this.setState({
+      userType: event.target.value
     });
   }
   
@@ -73,6 +87,11 @@ class SignupForm extends React.Component {
       valid = false;
     }
 
+    if (!['USER_INE', 'USER_ASSOCIATION'].includes(this.state.userType)) {
+      messages.userType = 'Vínculo deve ser Voluntário InE ou Associado';
+      valid = false;
+    }
+
     this.setState({
       messages: messages
     });
@@ -81,6 +100,9 @@ class SignupForm extends React.Component {
 
   handleSubmit(event) {
     event.preventDefault();
+
+    console.log(this.state);
+
     if (!this.validateForm()) {
       return;
     }
@@ -131,25 +153,42 @@ class SignupForm extends React.Component {
   render() {
     return ( 
       <form method="post" className="needs-validation" onSubmit={(e) => this.handleSubmit(e)}>
-        <h1 className="h3 mb-3 fw-normal">Cadastrar</h1>
+        <h1 className="h3 mb-3 fw-normal">Novo cadastro</h1>
     
         <p className="ms-1 text-start text-danger">{this.state.requestMessage}</p>
         <div className="form-floating mb-3">
           <input type="text" className="form-control" name="name" value={this.state.name} 
             placeholder="" onChange={(e) => this.handleInputChange(e)}/>
-          <label htmlFor="floatingInput">Nome completo</label>
+          <label>Nome completo</label>
           <p className="ms-1 text-start text-danger">{this.state.messages.name}</p>
         </div>
         <div className="form-floating mb-3">
           <input type="text" className="form-control" name="phone" value={this.formatPhone()} 
             placeholder="" onChange={(e) => this.handlePhoneInputChange(e)}/>
-          <label htmlFor="floatingInput">Telefone</label>
+          <label>Telefone</label>
           <p className="ms-1 text-start text-danger">{this.state.messages.phone}</p>
+        </div>
+        <div className="form-floating mb-3">
+          <div className="form-check-inline">
+            <input className="form-check-input" type="radio" name="userType" id="userTypeRadio1"
+              value="USER_INE" checked={this.state.userType === "USER_INE"} onChange={(e) => this.handleUserTypeInputChange(e)} />
+            <label className="form-check-label" htmlFor="userTypeRadio1">
+              Voluntário InE
+            </label>
+          </div>
+          <div className="form-check-inline">
+            <input className="form-check-input" type="radio" name="userType" id="userTypeRadio2"
+              value="USER_ASSOCIATION" checked={this.state.userType === "USER_ASSOCIATION"} onChange={(e) => this.handleUserTypeInputChange(e)} />
+            <label className="form-check-label"htmlFor="userTypeRadio2">
+              Associado
+            </label>
+          </div>
+          <p className="ms-1 text-start text-danger">{this.state.messages.userType}</p>
         </div>
         <div className="form-floating mb-3">
           <input type="text" className="form-control" name="username" value={this.state.username} 
             placeholder="" onChange={(e) => this.handleInputChange(e)}/>
-          <label htmlFor="floatingInput">Usuário</label>
+          <label>Usuário</label>
           <p className="ms-1 text-start text-danger">{this.state.messages.username}</p>
         </div>
         <div className="form-floating">
@@ -161,7 +200,7 @@ class SignupForm extends React.Component {
         <div className="form-floating mb-3">
           <input type="password" className="form-control" name="password1" value={this.state.password1} 
             placeholder="" onChange={(e) => this.handleInputChange(e)}/>
-          <label htmlFor="floatingInput">Confirmação de senha</label>
+          <label>Confirmação de senha</label>
           <p className="ms-1 text-start text-danger">{this.state.messages.password1}</p>
         </div>
         

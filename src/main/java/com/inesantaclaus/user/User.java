@@ -22,7 +22,7 @@ public class User {
 	private Long id;
 
 	@NotBlank
-	@Size(max = 20)
+  @Size(min = 3, max = 20)
 	private String username;
 
 	@NotBlank
@@ -34,10 +34,13 @@ public class User {
 	@Size(max = 120)
 	private String name;
 
-	@Size(min = 8, max = 20)
+	@NotBlank
+	@Size(min = 10, max = 11)
 	private String phone;
 
-  @ManyToMany(fetch = FetchType.LAZY)
+	private EUserType userType;
+
+	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(	name = "user_roles", 
 				joinColumns = @JoinColumn(name = "user_id"), 
 				inverseJoinColumns = @JoinColumn(name = "role_id"))
@@ -46,11 +49,12 @@ public class User {
 	public User() {
 	}
 
-	public User(String username, String password, String name, String phone) {
+	public User(String username, String password, String name, String phone, EUserType userType) {
 		this.username = username;
 		this.password = password;
 		this.name = name;
 		this.phone = phone;
+		this.userType = userType;
 	}
 
 	public Long getId() {
@@ -100,4 +104,12 @@ public class User {
   public void setPhone(String phone) {
     this.phone = phone;
   }
+
+  public EUserType getUserType() {
+		return userType;
+	}
+
+	public void setUserType(EUserType userType) {
+		this.userType = userType;
+	}
 }

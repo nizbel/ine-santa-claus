@@ -3,6 +3,8 @@ package com.inesantaclaus.security.payload;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+import com.inesantaclaus.user.EUserType;
+
 public class SignupRequest {
   @NotBlank
   @Size(min = 3, max = 20)
@@ -12,12 +14,15 @@ public class SignupRequest {
 	@Size(max = 120)
 	private String name;
 
+	@NotBlank
   @Size(min = 10, max = 11)
 	private String phone;
 
   @NotBlank
   @Size(min = 6, max = 40)
   private String password;
+
+	private EUserType userType;
 
   public String getUsername() {
     return username;
@@ -50,4 +55,13 @@ public class SignupRequest {
   public void setPhone(String phone) {
     this.phone = phone;
   }
+
+  public EUserType getUserType() {
+    return userType;
+  }
+
+  public void setUserType(EUserType userType) {
+    this.userType = userType;
+  }
+
 }

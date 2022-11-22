@@ -1,7 +1,5 @@
 package com.inesantaclaus.security.payload;
 
-import java.util.Set;
-
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
@@ -10,13 +8,11 @@ public class SignupRequest {
   @Size(min = 3, max = 20)
   private String username;
 
-  private Set<String> role;
-
 	@NotBlank
 	@Size(max = 120)
 	private String name;
 
-  @Size(min = 8, max = 20)
+  @Size(min = 10, max = 11)
 	private String phone;
 
   @NotBlank
@@ -37,14 +33,6 @@ public class SignupRequest {
 
   public void setPassword(String password) {
     this.password = password;
-  }
-
-  public Set<String> getRole() {
-    return this.role;
-  }
-
-  public void setRole(Set<String> role) {
-    this.role = role;
   }
 
 	public String getName() {

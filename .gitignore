@@ -45,7 +45,8 @@ sketch
 # End of https://www.toptal.com/developers/gitignore/api/react,java
 
 target/
-env*.properties
+env.properties
+*.prod.*
 config.js
 build.sh
 

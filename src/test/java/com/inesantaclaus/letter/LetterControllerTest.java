@@ -28,9 +28,8 @@ public class LetterControllerTest {
 	 * Listing
 	 */
 	@Test
-	public void getList() throws Exception {
+	public void hasToBeAuthorizedToListLetters() throws Exception {
 		mvc.perform(MockMvcRequestBuilders.get(baseUrl + "/list").accept(MediaType.APPLICATION_JSON))
-				.andExpect(status().isOk())
-				.andExpect(content().string(not(equalTo(""))));
+				.andExpect(status().isUnauthorized());
 	}
 }

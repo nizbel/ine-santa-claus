@@ -1,54 +1,43 @@
-class Letter extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      name: props.name,
-      ineClass: props.ineClass,
-      gifts: props.gifts || 'Sem sugestão de presente, favor ler a carta',
-      age: props.age,
-      images: props.images,
-      onEdit: props.onEdit,
-      onVisualize: props.onVisualize
-    }
-  }
-
-  render() {
-    return (
-      <div className="col">
-        <div className="card shadow-sm">
-          <img className="bd-placeholder-img card-img-top" height="250" src={this.state.images[0]} />
-          <div className="card-body">
-            <div className="d-flex justify-content-between">
-              <p><b>{this.state.name}</b></p>
-              <p>{this.state.age} anos</p>
+function Letter(props) {
+  return (
+    <div className="col">
+      <div className="card shadow-sm">
+        <img className="bd-placeholder-img card-img-top" height="250" src={props.images[0]} />
+        <div className="card-body">
+          <div className="d-flex justify-content-between">
+            <p><b>{props.name}</b></p>
+            <p>{props.age} anos</p>
+          </div>
+          <p>{props.giftSuggestion}</p>
+          <div className="d-flex justify-content-between align-items-center">
+            <div className="btn-group">
+              <button type="button" className="btn btn-sm btn-outline-secondary"
+                onClick={props.onVisualize}>Visualizar</button>
+              {isAdmin() ?
+              <button type="button" className="btn btn-sm btn-outline-secondary"
+                onClick={props.onEdit}>Editar</button>
+                : null}
             </div>
-            <p>{this.state.gifts}</p>
-            <div className="d-flex justify-content-between align-items-center">
-              <div className="btn-group">
-                <button type="button" className="btn btn-sm btn-outline-secondary"
-                  onClick={this.state.onVisualize}>Visualizar</button>
-                <button type="button" className="btn btn-sm btn-outline-secondary"
-                  onClick={this.state.onEdit}>Editar</button>
-              </div>
-              <small className="text-muted">{this.state.ineClass}</small>
-            </div>
+            <small className="text-muted">{props.ineClass}</small>
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 class LettersList extends React.Component {
   constructor(props) {
     super(props);
+    console.log(props);
     this.state = {
       isLoading: true,
       letters: [],
       user: props.user,
       editModal: null,
       viewModal: null,
-      currentLetter: null
+      currentLetter: null,
+      visualizationType: 'all'
     }
   }
 
@@ -64,6 +53,9 @@ class LettersList extends React.Component {
       })
       .catch(error => {
         // handle error
+        this.setState({
+          isLoading: false
+        });
         console.log(error);
       });
 
@@ -83,14 +75,12 @@ class LettersList extends React.Component {
   }
 
   showEditModal(letter) {
-    this.state.editModal.show();
-    this.setState({
-      currentLetter: letter
-    });
-  }
+    // Has to be admin
+    if (!isAdmin()) {
+      return;
+    }
 
-  showViewModal(letter) {
-    this.state.viewModal.show();
+    this.state.editModal.show();
     this.setState({
       currentLetter: letter
     });
@@ -98,6 +88,11 @@ class LettersList extends React.Component {
 
   handleLetterEditInput(event) {
     event.preventDefault();
+    // Has to be admin
+    if (!isAdmin()) {
+      return;
+    }
+
     const target = event.target;
     const editedLetter = {...this.state.currentLetter, [target.name]: target.value}
     this.setState({
@@ -107,22 +102,26 @@ class LettersList extends React.Component {
 
   handleEdit(event) {
     event.preventDefault();
+    // Has to be admin
+    if (!isAdmin()) {
+      return;
+    }
 
     // Make edit request
     axiosInstance().post('http://localhost:8080/letters/edit/' + this.state.currentLetter.id, this.state.currentLetter)
     .then(response => {
       const editedLetter = response.data;
+      
+      // hide modal
+      this.state.editModal.hide();
 
-      // const letters = [...this.state.letters.map(letter => letter.id !== editedLetter.id ? letter : editedLetter)];
-      const letters = [editedLetter];
+      const letters = [...this.state.letters.map(letter => letter.id !== editedLetter.id ? letter : editedLetter)];
       // update letter
       this.setState({
         currentLetter: null,
         letters: letters
       })
 
-      // hide modal
-      this.state.editModal.hide();
     })
     .catch(error => {
       // handle error
@@ -141,17 +140,17 @@ class LettersList extends React.Component {
       (
         <form method="post" onSubmit={(e) => this.handleEdit(e)}>  
           <div className="d-flex mb-3">  
-            <div className="form-floating flex-fill mr-5">
+            <div className="form-floating flex-fill me-5">
               <input type="text" className="form-control ml-3" name="name" value={letter.name} 
                 placeholder="" onChange={(e) => this.handleLetterEditInput(e)}/>
               <label htmlFor="floatingInput">Nome</label>
             </div>
-            <div className="form-floating flex-fill mx-5">
+            <div className="form-floating flex-fill me-5">
               <input type="text" className="form-control" name="ineClass" value={letter.ineClass} 
                 placeholder="" onChange={(e) => this.handleLetterEditInput(e)}/>
               <label htmlFor="floatingPassword">Turma</label>
             </div>
-            <div className="form-floating flex-fill ml-5">
+            <div className="form-floating flex-fill">
               <input type="number" className="form-control" name="age" value={letter.age} 
                 placeholder="" onChange={(e) => this.handleLetterEditInput(e)}/>
               <label htmlFor="floatingPassword">Idade</label>
@@ -186,6 +185,83 @@ class LettersList extends React.Component {
     );
   }
 
+  showViewModal(letter) {
+    this.state.viewModal.show();
+    this.setState({
+      currentLetter: letter
+    });
+  }
+
+  renderAdoptButton() {
+    if (this.state.currentLetter && this.state.currentLetter.adopter) {
+      if (this.state.currentLetter.adopter.id == this.state.user.id) {
+        return (<button type="button" className="btn btn-secondary" onClick={() => this.handleAbandon()}>Abandonar</button>);
+      }
+      return <p>Adotada por {this.state.currentLetter.adopter.name}</p>;
+    }
+    return (<button type="button" className="btn btn-primary" onClick={() => this.handleAdopt()}>Adotar</button>);
+  }
+
+  handleAdopt() {
+    // Has to be a validated user
+    if (!isValidated()) {
+      return;
+    }
+
+    // Make request
+    axiosInstance().post('http://localhost:8080/letters/adopt/' + this.state.currentLetter.id)
+    .then(response => {      
+      // hide modal
+      this.state.viewModal.hide();
+
+      if (response.data) {
+        const currentLetter = {...this.state.currentLetter, adopter: this.state.user};
+
+        const letters = [...this.state.letters.map(letter => letter.id !== currentLetter.id ? letter : currentLetter)];
+        // update letter
+        this.setState({
+          currentLetter: null,
+          letters: letters
+        })
+      }
+
+    })
+    .catch(error => {
+      // handle error
+      console.log(error);
+    });
+  }
+
+  handleAbandon() {
+    // Has to be a validated user
+    if (!isValidated()) {
+      return;
+    }
+
+    // Make request
+    axiosInstance().post('http://localhost:8080/letters/abandon/' + this.state.currentLetter.id)
+    .then(response => {      
+      // hide modal
+      this.state.viewModal.hide();
+
+      if (response.data) {
+        const currentLetter = {...this.state.currentLetter, adopter: null};
+
+        const letters = [...this.state.letters.map(letter => letter.id !== currentLetter.id ? letter : currentLetter)];
+        // update letter
+        this.setState({
+          currentLetter: null,
+          letters: letters
+        })
+      }
+
+    })
+    .catch(error => {
+      // handle error
+      console.log(error);
+    });
+  }
+
   renderViewModal() {
     const letter = this.state.currentLetter;
 
@@ -213,7 +289,7 @@ class LettersList extends React.Component {
               
               <div className="d-flex justify-content-between">
                 <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                <button type="button" className="btn btn-primary">Adotar</button>
+                {this.renderAdoptButton()}
               </div>
             </div>
           </div>
@@ -222,15 +298,29 @@ class LettersList extends React.Component {
     );
   }
 
+  changeVisualizationType(visualizationType) {
+    this.setState({
+      visualizationType: visualizationType
+    })
+  }
+
   render() {
-    console.log(this.state.letters);
     const letters = [];
+
     this.state.letters.forEach(letter => {
+      if (this.state.visualizationType === 'adoptable' && letter.adopter) {
+        return;
+      } else if (this.state.visualizationType === 'myAdopted' && (!letter.adopter || letter.adopter.id !== this.state.user.id)) {
+        return;
+      }
+
       letters.push(
         <Letter
+          key={letter.id}
+          id={letter.id}
           name={letter.name}
           ineClass={letter.ineClass}
-          gifts={letter.giftSuggestion}
+          giftSuggestion={letter.giftSuggestion || 'Sem sugestão de presente, favor ler a carta'}
           images={letter.imagePath}
           age={letter.age}
           onEdit={() => this.showEditModal(letter)}
@@ -243,8 +333,21 @@ class LettersList extends React.Component {
         {this.state.isLoading ?
           this.renderLoading()
           :
-          <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
-            {letters}
+          <div className="row">
+            <div className="btn-group col col-md-6 offset-md-3">
+              <button type="button" onClick={() => this.changeVisualizationType('all')}
+              className={`btn btn-sm btn-outline-secondary ${this.state.visualizationType  == 'all' ? 'active': ''}`}
+                >Todas</button>
+              <button type="button" onClick={() => this.changeVisualizationType('adoptable')}
+              className={`btn btn-sm btn-outline-secondary ${this.state.visualizationType  == 'adoptable' ? 'active': ''}`}
+                >Não adotadas</button>
+              <button type="button" onClick={() => this.changeVisualizationType('myAdopted')}
+              className={`btn btn-sm btn-outline-secondary ${this.state.visualizationType  == 'myAdopted' ? 'active': ''}`}
+                >Minhas cartas</button>
+            </div>
+            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+              {letters}
+            </div>
           </div>
         }
 
@@ -260,33 +363,174 @@ class NavBar extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      user: props.user
+      user: props.user,
+      validateModal: null,
+      users: []
     }
+  }
+
+  componentDidMount() {
+    if (isAdmin()) {
+      // Make request
+      axiosInstance().get('http://localhost:8080/users/list')
+        .then(response => {
+          // handle success
+          const users = [];
+          response.data.forEach(user => {
+            users.push({...user, roles: user.roles.map(r => r.name)});
+          });
+
+          this.setState({
+            users: users,
+          });
+        })
+        .catch(error => {
+          // handle error
+          console.log(error);
+        });
+
+      this.setState({
+        validateModal: new bootstrap.Modal(document.getElementById('validateModal'))
+      });
+    }
+  }
+
+  showValidateModal() {
+    // Has to be admin
+    if (!isAdmin()) {
+      return;
+    }
+
+    this.state.validateModal.show();
+  }
+
+  handleChangeValidated(id) {
+    if (isAdmin()) {
+      // Make request
+      axiosInstance().post('http://localhost:8080/users/changeValidated/' + id)
+        .then(response => {
+          const editedUser = {...response.data, roles: response.data.roles.map(r => r.name)};
+
+          // Update user in users list
+          const users = [...this.state.users.map(user => user.id !== editedUser.id ? user : editedUser)];
+
+          this.setState({
+            users: users,
+          });
+        })
+        .catch(error => {
+          // handle error
+          console.log(error);
+        });
+    }
+  }
+
+  handleChangeAdmin(id) {
+    if (isAdmin()) {
+      // Make request
+      axiosInstance().post('http://localhost:8080/users/changeAdmin/' + id)
+        .then(response => {
+          const editedUser = {...response.data, roles: response.data.roles.map(r => r.name)};
+
+          // Update user in users list
+          const users = [...this.state.users.map(user => user.id !== editedUser.id ? user : editedUser)];
+
+          this.setState({
+            users: users,
+          });
+        })
+        .catch(error => {
+          // handle error
+          console.log(error);
+        });
+    }
+  }
+
+  renderUsers() {
+    const users = [];
+    this.state.users.forEach(user => {
+      users.push(
+        <div className="alert alert-info m-2 row" role="alert" key={user.id}>
+          <div className="col-12 col-md-2">Usuário: <strong>{user.username}</strong></div>
+          <div className="col-12 col-md-3">Nome: <strong>{user.name}</strong></div>
+          <div className="col-12 col-md-3">Telefone: <strong>{formatPhone(user.phone)}</strong></div>
+          <div className="col-6 col-md-2">Validado? <input 
+              type='checkbox'
+              checked={user.roles.includes('ROLE_USER')}
+              onChange={() => this.handleChangeValidated(user.id)}
+          /></div>
+          <div className="col-6 col-md-2">Admin? <input 
+            type='checkbox'
+            checked={user.roles.includes('ROLE_ADMIN')}
+            onChange={() => this.handleChangeAdmin(user.id)}
+          /></div>
+        </div>
+        );
+    });
+
+    return (
+      <div>
+        {users}
+      </div>
+    );
+  }
+
+  renderValidateModal() {
+    // Check if admin
+    if (!isAdmin()) {
+      return null;
+    }
+
+    return (
+      <div className="modal fade" id="validateModal" tabIndex="-1" role="dialog" aria-labelledby="validateModalLabel" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-scrollable" role="document" 
+        style={{marginLeft: "5vw"}}>
+          <div className="modal-content" style={{width: "90vw"}}>
+            <div className="modal-header">
+              <h5 className="modal-title" id="validateModalLabel">Validação de usuários</h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div className="modal-body p-0">
+              {this.renderUsers()}
+            </div>
+            <div className="modal-footer flex-column align-items-stretch">              
+              <div className="d-flex justify-content-end">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   render() {
     const options = [];
     
-    if (this.state.user) {
-      console.log(this.state.user);
-      if (this.state.user.roles.includes('ROLE_ADMIN')) {
-        options.push(<li><a href="/users/validate" className="text-white">Validar usuários</a></li>);
+    if (isLoggedIn()) {
+      if (isAdmin()) {
+        options.push(<li><a href="#" onClick={() => this.showValidateModal()} className="text-white">Administrar usuários</a></li>);
       }
       options.push(<li><a href="#" onClick={logout} className="text-white">Logout</a></li>);
     } else {
+      options.push(<li><a href="/signup" className="text-white">Cadastro</a></li>);
       options.push(<li><a href="/login" className="text-white">Login</a></li>);
     }
 
-    const greetMessage = this.state.user ? 'Olá ' + this.state.user.name.split(' ')[0] + '!' : '';
+    const greetMessage = isLoggedIn() ? 'Olá ' + this.state.user.name.split(' ')[0] + '!' : '';
 
     return ( 
       <div>
-        <div className="bg-dark collapse" id="navbarHeader">
+        <div className="bg-ine collapse" id="navbarHeader">
           <div className="container">
             <div className="row">
               <div className="col-sm-8 col-md-7 py-4">
                 <h4 className="text-white">Sobre</h4>
-                <p className="text-muted">Essa página foi criada por ... e o código pode ser visualizado em ...</p>
+                <p className="text-white">
+                  Essa página foi criada por <a 
+                  className="text-white" href="https://twitter.com/gui_niz">@gui_niz</a> e o código-fonte está disponível no <a 
+                  className="text-white" href="https://github.com/nizbel/ine-santa-claus">GitHub</a>
+                </p>
               </div>
               <div className="col-sm-4 offset-md-1 py-4">
                 <h4 className="text-white">{greetMessage}</h4>
@@ -297,29 +541,111 @@ class NavBar extends React.Component {
             </div>
           </div>
         </div>
-        <div className="navbar navbar-dark bg-dark shadow-sm">
+        <div className="navbar bg-ine shadow-sm">
           <div className="container">
             <a href="#" className="navbar-brand d-flex align-items-center">
-              <strong>InE Santa Claus</strong>
+              <strong>Papai Noel do InE</strong>
             </a>
             <button className="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
               <span className="navbar-toggler-icon"></span>
             </button>
           </div>
         </div>
+        {this.renderValidateModal()}
       </div>
     );
   }
 }
-  
+
+class Greetings extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      user: props.user,
+      adoptedLetters: []
+    }
+  }
+
+  componentDidMount() {
+    // Check if user is logged in
+    if (!isValidated()) {
+      return;
+    }
+
+    // Make request
+    axiosInstance().get('http://localhost:8080/users/listAdoptedLetters')
+      .then(response => {
+        // handle success
+        this.setState({
+          adoptedLetters: response.data
+        });
+      })
+      .catch(error => {
+        // handle error
+        console.log(error);
+      });
+  }
+
+  generateRandomGreet() {
+    const randomInt = Math.floor(Math.random() * 3);
+
+    const name = this.state.user.name.split(" ")[0];
+
+    switch (randomInt) {
+      case 0:
+        return (<p className="lead text-muted">Olá {name}! Escolha uma cartinha abaixo para adotar!</p>);
+      case 1:
+        return (<p className="lead text-muted">Oi {name}! Que tal adotar uma cartinha hoje?</p>);
+      case 2:
+        return (<p className="lead text-muted">Que bom ter você por aqui {name}!</p>);
+    }
+  }
+
+  render() {
+    let greetingsMessage;
+    if (isValidated()) {
+      greetingsMessage = this.generateRandomGreet();
+    } else if (isLoggedIn()) {
+      greetingsMessage = (
+        <p className="lead text-muted">
+          Aguarde a validação do seu usuário para poder visualizar as cartas.
+        </p>
+      )
+    } else {
+      greetingsMessage = (
+        <p className="lead text-muted">
+          <a href="/login">Entre</a> ou <a href="/signup">cadastre-se</a> para poder visualizar as cartas!
+        </p>
+      )
+    }
+
+    return (
+      <div className="col-lg-6 col-md-8 mx-auto">
+        <img className="mb-4 w-50" src="/img/logo.png" alt="logo" title="Inglês na Estrutural" />
+        <h1 className="fw-light">Bem-vindo(a) ao Papai Noel do InE!</h1>
+        {greetingsMessage}
+      </div>
+    );
+  }
+}
+
 // functions
 function getUser() {
   const userString = localStorage.getItem('user');
   return userString ? JSON.parse(userString) : null;
 }
 
+function setUser(user) {
+  localStorage.setItem('user', JSON.stringify(user));
+}
+
 function isLoggedIn() {
   return getUser() != null;
+}
+
+function isValidated() {
+  const user = getUser();
+  return user && user.roles.includes('ROLE_USER');
 }
 
 function isAdmin() {
@@ -336,23 +662,61 @@ function axiosInstance() {
   return reqInstance || axios;
 }
 
-const user = getUser();
+function formatPhone(phone) {
+  if (phone.length == 11) {
+    return '(' + phone.substring(0, 2) + ') ' + phone.substring(2, 7) + '-' + phone.substring(7);
+  } else {
+    return '(' + phone.substring(0, 2) + ') ' + phone.substring(2, 6) + '-' + phone.substring(6);
+  } 
+}
 
-const navBarRoot = ReactDOM.createRoot(document.getElementById("header"));
-navBarRoot.render(<NavBar user={user}/>);
-// const greetRoot = ReactDOM.createRoot(document.getElementById("greet"));
-const lettersRoot = ReactDOM.createRoot(document.getElementById("album"));
+// Starting code
+const storageUser = getUser();
 
 // Prepare base for axios instance
 let reqInstance = null;
 
-if (user != null) {
+if (storageUser != null) {
   // Prepare axios instance with access token
   reqInstance = axios.create({
     headers: {
-      Authorization : `Bearer ${user.accessToken}`
+      Authorization : `Bearer ${storageUser.accessToken}`
       }
   });
 
-  lettersRoot.render(<LettersList user={user}/>);
+  axiosInstance().get('http://localhost:8080/users/loggedUser')
+  .then(response => {
+    // handle success
+    const user = {...storageUser, roles: response.data.roles.map(r => r.name)};
+
+    setUser(user);
+
+    const navBarRoot = ReactDOM.createRoot(document.getElementById("header"));
+    navBarRoot.render(<NavBar user={user}/>);
+
+    const greetingsRoot = ReactDOM.createRoot(document.getElementById("greetings"));
+    greetingsRoot.render(<Greetings user={user}/>);
+
+    if (isValidated()) {
+      const lettersRoot = ReactDOM.createRoot(document.getElementById("album"));
+      lettersRoot.render(<LettersList user={user}/>);
+    }
+  })
+  .catch(error => {
+    // handle error
+    console.log(error);
+    localStorage.setItem('user', null);
+
+    const navBarRoot = ReactDOM.createRoot(document.getElementById("header"));
+    navBarRoot.render(<NavBar />);
+  
+    const greetingsRoot = ReactDOM.createRoot(document.getElementById("greetings"));
+    greetingsRoot.render(<Greetings />);
+  });
+} else {
+  const navBarRoot = ReactDOM.createRoot(document.getElementById("header"));
+  navBarRoot.render(<NavBar />);
+
+  const greetingsRoot = ReactDOM.createRoot(document.getElementById("greetings"));
+  greetingsRoot.render(<Greetings />);
 }

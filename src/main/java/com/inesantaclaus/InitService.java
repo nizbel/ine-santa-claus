@@ -19,6 +19,7 @@ import com.inesantaclaus.letter.LetterRepository;
 import com.inesantaclaus.role.ERole;
 import com.inesantaclaus.role.Role;
 import com.inesantaclaus.role.RoleRepository;
+import com.inesantaclaus.user.EUserType;
 import com.inesantaclaus.user.User;
 import com.inesantaclaus.user.UserRepository;
 
@@ -56,9 +57,11 @@ public class InitService {
 
       // Create base admin user
       User baseAdmin = new User(env.getProperty("inesantaclaus.app.baseuser.username"),
-      encoder.encode(env.getProperty("inesantaclaus.app.baseuser.password")),
-      env.getProperty("inesantaclaus.app.baseuser.name"),
-      env.getProperty("inesantaclaus.app.baseuser.phone"));
+        encoder.encode(env.getProperty("inesantaclaus.app.baseuser.password")),
+        env.getProperty("inesantaclaus.app.baseuser.name"),
+        env.getProperty("inesantaclaus.app.baseuser.phone"),
+        EUserType.USER_INE
+      );
 
       baseAdmin.setRoles(new HashSet<Role>(Arrays.asList(userRole, adminRole)));
       userRepository.save(baseAdmin);

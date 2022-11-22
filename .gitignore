@@ -51,3 +51,4 @@ env.properties
 
 # Image files
 *.jpeg
+*.png

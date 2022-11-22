@@ -18,12 +18,8 @@ public class LetterController {
   @Autowired
   LetterService service;
 
-  @GetMapping("/{id}")
-  public Letter detail(@PathVariable long id) {
-    return service.detailLetter(id);
-  }
-
   @GetMapping("/list")
+	@PreAuthorize("hasRole('USER')")
   public List<Letter> list() {
     return service.listLetters();
   }
@@ -41,5 +37,17 @@ public class LetterController {
       throw new Exception("Carta inválida");
     }
     return service.edit(letter);
+  }
+
+  @PostMapping("/adopt/{id}") 
+	@PreAuthorize("hasRole('USER')")
+  public Boolean adopt(@PathVariable long id) throws Exception {
+    return service.adopt(id);
+  }
+
+  @PostMapping("/abandon/{id}") 
+	@PreAuthorize("hasRole('USER')")
+  public Boolean abandon(@PathVariable long id) throws Exception {
+    return service.abandon(id);
   }
 }

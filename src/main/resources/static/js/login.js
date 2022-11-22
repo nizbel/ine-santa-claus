@@ -33,7 +33,7 @@ class LoginForm extends React.Component {
 
   render() {
     return ( 
-      <form method="post" action="/auth/login" onSubmit={(e) => this.handleSubmit(e)}>
+      <form method="post" onSubmit={(e) => this.handleSubmit(e)}>
         <h1 className="h3 mb-3 fw-normal">Realizar login</h1>
     
         <div className="form-floating">

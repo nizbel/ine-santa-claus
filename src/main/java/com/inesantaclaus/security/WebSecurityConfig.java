@@ -62,7 +62,7 @@ public class WebSecurityConfig {
     http.cors().and().csrf().disable()
         .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-        .authorizeRequests().antMatchers("/js/**", "/images/**").permitAll()
+        .authorizeRequests().antMatchers("/css/**", "/js/**", "/img/**").permitAll()
         .antMatchers("/auth/**").permitAll()
         .antMatchers("/test/**").permitAll() // TODO Remove
         .antMatchers("/init").permitAll()

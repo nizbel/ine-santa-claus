@@ -47,7 +47,7 @@ sketch
 target/
 env.properties
 config.js
-run.sh
+build.sh
 
 # Image files
 *.jpeg

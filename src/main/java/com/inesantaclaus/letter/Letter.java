@@ -15,7 +15,7 @@ import com.inesantaclaus.user.User;
 public class Letter {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
-  private int id;
+  private Long id;
 
   @NotBlank
   private String name;
@@ -27,7 +27,7 @@ public class Letter {
 
   private String giftSuggestion;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "user_id")
   private User adopter;
 
@@ -49,11 +49,11 @@ public class Letter {
     return String.format("%s from %s wants %s", name, ineClass, giftSuggestion);
   }
 
-  public int getId() {
+  public Long getId() {
     return id;
   }
 
-  public void setId(int id) {
+  public void setId(Long id) {
     this.id = id;
   }
 

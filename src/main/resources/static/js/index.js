@@ -1,3 +1,275 @@
+class NavBar extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      user: props.user,
+      validateModal: null,
+      users: []
+    }
+  }
+
+  componentDidMount() {
+    if (isAdmin()) {
+      // Make request
+      axiosInstance().get('http://localhost:8080/users/list')
+        .then(response => {
+          // handle success
+          const users = [];
+          response.data.forEach(user => {
+            users.push({...user, roles: user.roles.map(r => r.name)});
+          });
+
+          this.setState({
+            users: users,
+          });
+        })
+        .catch(error => {
+          // handle error
+          console.log(error);
+        });
+
+      this.setState({
+        validateModal: new bootstrap.Modal(document.getElementById('validateModal'))
+      });
+    }
+  }
+
+  showValidateModal() {
+    // Has to be admin
+    if (!isAdmin()) {
+      return;
+    }
+
+    this.state.validateModal.show();
+  }
+
+  handleChangeValidated(id) {
+    if (isAdmin()) {
+      // Make request
+      axiosInstance().post('http://localhost:8080/users/changeValidated/' + id)
+        .then(response => {
+          const editedUser = {...response.data, roles: response.data.roles.map(r => r.name)};
+
+          // Update user in users list
+          const users = [...this.state.users.map(user => user.id !== editedUser.id ? user : editedUser)];
+
+          this.setState({
+            users: users,
+          });
+        })
+        .catch(error => {
+          // handle error
+          console.log(error);
+        });
+    }
+  }
+
+  handleChangeAdmin(id) {
+    if (isAdmin()) {
+      // Make request
+      axiosInstance().post('http://localhost:8080/users/changeAdmin/' + id)
+        .then(response => {
+          const editedUser = {...response.data, roles: response.data.roles.map(r => r.name)};
+
+          // Update user in users list
+          const users = [...this.state.users.map(user => user.id !== editedUser.id ? user : editedUser)];
+
+          this.setState({
+            users: users,
+          });
+        })
+        .catch(error => {
+          // handle error
+          console.log(error);
+        });
+    }
+  }
+
+  renderUsers() {
+    const users = [];
+    this.state.users.forEach(user => {
+      const userType = user.userType === 'USER_INE' ? 'Voluntário InE' : 'Associação';
+      users.push(
+        <div className="alert alert-info m-2 row" role="alert" key={user.id}>
+          <div className="col-12 col-md-3">Nome: <strong>{user.name}</strong></div>
+          <div className="col-12 col-md-2">Telefone: <strong>{formatPhone(user.phone)}</strong></div>
+          <div className="col-12 col-md-3">Vínculo: <strong>{userType}</strong></div>
+          <div className="col-12 col-md-2">Usuário: <strong>{user.username}</strong></div>
+          <div className="col-6 col-md-1">Validado: <input 
+              type='checkbox'
+              checked={user.roles.includes('ROLE_USER')}
+              onChange={() => this.handleChangeValidated(user.id)}
+          /></div>
+          <div className="col-6 col-md-1">Admin: <input 
+            type='checkbox'
+            checked={user.roles.includes('ROLE_ADMIN')}
+            onChange={() => this.handleChangeAdmin(user.id)}
+          /></div>
+        </div>
+        );
+    });
+
+    return (
+      <div>
+        {users}
+      </div>
+    );
+  }
+
+  renderValidateModal() {
+    // Check if admin
+    if (!isAdmin()) {
+      return null;
+    }
+
+    return (
+      <div className="modal fade" id="validateModal" tabIndex="-1" role="dialog" aria-labelledby="validateModalLabel" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-scrollable" role="document" 
+        style={{marginLeft: "5vw"}}>
+          <div className="modal-content" style={{width: "90vw"}}>
+            <div className="modal-header">
+              <h5 className="modal-title" id="validateModalLabel">Validação de usuários</h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div className="modal-body p-0">
+              {this.renderUsers()}
+            </div>
+            <div className="modal-footer flex-column align-items-stretch">              
+              <div className="d-flex justify-content-end">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  render() {
+    const options = [];
+    
+    if (isLoggedIn()) {
+      if (isAdmin()) {
+        options.push(<li><a href="#" onClick={() => this.showValidateModal()} className="text-white">Administrar usuários</a></li>);
+      }
+      options.push(<li><a href="#" onClick={logout} className="text-white">Sair</a></li>);
+    } else {
+      options.push(<li><a href="/signup" className="text-white">Cadastrar</a></li>);
+      options.push(<li><a href="/login" className="text-white">Entrar</a></li>);
+    }
+
+    const greetMessage = isLoggedIn() ? 'Olá ' + this.state.user.name.split(' ')[0] + '!' : '';
+
+    return ( 
+      <div>
+        <div className="bg-ine collapse" id="navbarHeader">
+          <div className="container">
+            <div className="row">
+              <div className="col-sm-8 col-md-7 py-4">
+                <h4 className="text-white">Sobre</h4>
+                <p className="text-white">
+                  Essa página foi criada por <a 
+                  className="text-white" href="https://twitter.com/gui_niz">@gui_niz</a> e o código-fonte está disponível no <a 
+                  className="text-white" href="https://github.com/nizbel/ine-santa-claus">GitHub</a>
+                </p>
+              </div>
+              <div className="col-sm-4 offset-md-1 py-4">
+                <h4 className="text-white">{greetMessage}</h4>
+                <ul className="list-unstyled">
+                  {options}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="navbar bg-ine shadow-sm">
+          <div className="container">
+            <a href="#" className="navbar-brand d-flex align-items-center">
+              <strong>Papai Noel do InE</strong>
+            </a>
+            <button className="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
+              <span className="navbar-toggler-icon"></span>
+            </button>
+          </div>
+        </div>
+        {this.renderValidateModal()}
+      </div>
+    );
+  }
+}
+
+class Greetings extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      user: props.user,
+      adoptedLetters: []
+    }
+  }
+
+  componentDidMount() {
+    // Check if user is logged in
+    if (!isValidated()) {
+      return;
+    }
+
+    // Make request
+    axiosInstance().get('http://localhost:8080/users/listAdoptedLetters')
+      .then(response => {
+        // handle success
+        this.setState({
+          adoptedLetters: response.data
+        });
+      })
+      .catch(error => {
+        // handle error
+        console.log(error);
+      });
+  }
+
+  generateRandomGreet() {
+    const randomInt = Math.floor(Math.random() * 3);
+
+    const name = this.state.user.name.split(" ")[0];
+
+    switch (randomInt) {
+      case 0:
+        return (<p className="lead text-muted">Olá {name}! Escolha uma cartinha abaixo para adotar!</p>);
+      case 1:
+        return (<p className="lead text-muted">Oi {name}! Que tal adotar uma cartinha hoje?</p>);
+      case 2:
+        return (<p className="lead text-muted">Que bom ter você por aqui {name}!</p>);
+    }
+  }
+
+  render() {
+    let greetingsMessage;
+    if (isValidated()) {
+      greetingsMessage = this.generateRandomGreet();
+    } else if (isLoggedIn()) {
+      greetingsMessage = (
+        <p className="lead text-muted">
+          Aguarde a validação do seu usuário para poder visualizar as cartas.
+        </p>
+      )
+    } else {
+      greetingsMessage = (
+        <p className="lead text-muted">
+          <a href="/login">Entre</a> ou <a href="/signup">cadastre-se</a> para poder visualizar as cartas!
+        </p>
+      )
+    }
+
+    return (
+      <div className="col-lg-6 col-md-8 mx-auto">
+        <img className="mb-4 w-50" src="/img/logo.png" alt="logo" title="Inglês na Estrutural" />
+        <h1 className="fw-light">Bem-vindo(a) ao Papai Noel do InE!</h1>
+        {greetingsMessage}
+      </div>
+    );
+  }
+}
+
 function Letter(props) {
   return (
     <div className="col">
@@ -355,276 +627,6 @@ class LettersList extends React.Component {
         {this.renderViewModal()}
       </div>
 
-    );
-  }
-}
-
-class NavBar extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      user: props.user,
-      validateModal: null,
-      users: []
-    }
-  }
-
-  componentDidMount() {
-    if (isAdmin()) {
-      // Make request
-      axiosInstance().get('http://localhost:8080/users/list')
-        .then(response => {
-          // handle success
-          const users = [];
-          response.data.forEach(user => {
-            users.push({...user, roles: user.roles.map(r => r.name)});
-          });
-
-          this.setState({
-            users: users,
-          });
-        })
-        .catch(error => {
-          // handle error
-          console.log(error);
-        });
-
-      this.setState({
-        validateModal: new bootstrap.Modal(document.getElementById('validateModal'))
-      });
-    }
-  }
-
-  showValidateModal() {
-    // Has to be admin
-    if (!isAdmin()) {
-      return;
-    }
-
-    this.state.validateModal.show();
-  }
-
-  handleChangeValidated(id) {
-    if (isAdmin()) {
-      // Make request
-      axiosInstance().post('http://localhost:8080/users/changeValidated/' + id)
-        .then(response => {
-          const editedUser = {...response.data, roles: response.data.roles.map(r => r.name)};
-
-          // Update user in users list
-          const users = [...this.state.users.map(user => user.id !== editedUser.id ? user : editedUser)];
-
-          this.setState({
-            users: users,
-          });
-        })
-        .catch(error => {
-          // handle error
-          console.log(error);
-        });
-    }
-  }
-
-  handleChangeAdmin(id) {
-    if (isAdmin()) {
-      // Make request
-      axiosInstance().post('http://localhost:8080/users/changeAdmin/' + id)
-        .then(response => {
-          const editedUser = {...response.data, roles: response.data.roles.map(r => r.name)};
-
-          // Update user in users list
-          const users = [...this.state.users.map(user => user.id !== editedUser.id ? user : editedUser)];
-
-          this.setState({
-            users: users,
-          });
-        })
-        .catch(error => {
-          // handle error
-          console.log(error);
-        });
-    }
-  }
-
-  renderUsers() {
-    const users = [];
-    this.state.users.forEach(user => {
-      users.push(
-        <div className="alert alert-info m-2 row" role="alert" key={user.id}>
-          <div className="col-12 col-md-2">Usuário: <strong>{user.username}</strong></div>
-          <div className="col-12 col-md-3">Nome: <strong>{user.name}</strong></div>
-          <div className="col-12 col-md-3">Telefone: <strong>{formatPhone(user.phone)}</strong></div>
-          <div className="col-6 col-md-2">Validado? <input 
-              type='checkbox'
-              checked={user.roles.includes('ROLE_USER')}
-              onChange={() => this.handleChangeValidated(user.id)}
-          /></div>
-          <div className="col-6 col-md-2">Admin? <input 
-            type='checkbox'
-            checked={user.roles.includes('ROLE_ADMIN')}
-            onChange={() => this.handleChangeAdmin(user.id)}
-          /></div>
-        </div>
-        );
-    });
-
-    return (
-      <div>
-        {users}
-      </div>
-    );
-  }
-
-  renderValidateModal() {
-    // Check if admin
-    if (!isAdmin()) {
-      return null;
-    }
-
-    return (
-      <div className="modal fade" id="validateModal" tabIndex="-1" role="dialog" aria-labelledby="validateModalLabel" aria-hidden="true">
-        <div className="modal-dialog modal-dialog-scrollable" role="document" 
-        style={{marginLeft: "5vw"}}>
-          <div className="modal-content" style={{width: "90vw"}}>
-            <div className="modal-header">
-              <h5 className="modal-title" id="validateModalLabel">Validação de usuários</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body p-0">
-              {this.renderUsers()}
-            </div>
-            <div className="modal-footer flex-column align-items-stretch">              
-              <div className="d-flex justify-content-end">
-                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  render() {
-    const options = [];
-    
-    if (isLoggedIn()) {
-      if (isAdmin()) {
-        options.push(<li><a href="#" onClick={() => this.showValidateModal()} className="text-white">Administrar usuários</a></li>);
-      }
-      options.push(<li><a href="#" onClick={logout} className="text-white">Logout</a></li>);
-    } else {
-      options.push(<li><a href="/signup" className="text-white">Cadastro</a></li>);
-      options.push(<li><a href="/login" className="text-white">Login</a></li>);
-    }
-
-    const greetMessage = isLoggedIn() ? 'Olá ' + this.state.user.name.split(' ')[0] + '!' : '';
-
-    return ( 
-      <div>
-        <div className="bg-ine collapse" id="navbarHeader">
-          <div className="container">
-            <div className="row">
-              <div className="col-sm-8 col-md-7 py-4">
-                <h4 className="text-white">Sobre</h4>
-                <p className="text-white">
-                  Essa página foi criada por <a 
-                  className="text-white" href="https://twitter.com/gui_niz">@gui_niz</a> e o código-fonte está disponível no <a 
-                  className="text-white" href="https://github.com/nizbel/ine-santa-claus">GitHub</a>
-                </p>
-              </div>
-              <div className="col-sm-4 offset-md-1 py-4">
-                <h4 className="text-white">{greetMessage}</h4>
-                <ul className="list-unstyled">
-                  {options}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="navbar bg-ine shadow-sm">
-          <div className="container">
-            <a href="#" className="navbar-brand d-flex align-items-center">
-              <strong>Papai Noel do InE</strong>
-            </a>
-            <button className="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
-              <span className="navbar-toggler-icon"></span>
-            </button>
-          </div>
-        </div>
-        {this.renderValidateModal()}
-      </div>
-    );
-  }
-}
-
-class Greetings extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      user: props.user,
-      adoptedLetters: []
-    }
-  }
-
-  componentDidMount() {
-    // Check if user is logged in
-    if (!isValidated()) {
-      return;
-    }
-
-    // Make request
-    axiosInstance().get('http://localhost:8080/users/listAdoptedLetters')
-      .then(response => {
-        // handle success
-        this.setState({
-          adoptedLetters: response.data
-        });
-      })
-      .catch(error => {
-        // handle error
-        console.log(error);
-      });
-  }
-
-  generateRandomGreet() {
-    const randomInt = Math.floor(Math.random() * 3);
-
-    const name = this.state.user.name.split(" ")[0];
-
-    switch (randomInt) {
-      case 0:
-        return (<p className="lead text-muted">Olá {name}! Escolha uma cartinha abaixo para adotar!</p>);
-      case 1:
-        return (<p className="lead text-muted">Oi {name}! Que tal adotar uma cartinha hoje?</p>);
-      case 2:
-        return (<p className="lead text-muted">Que bom ter você por aqui {name}!</p>);
-    }
-  }
-
-  render() {
-    let greetingsMessage;
-    if (isValidated()) {
-      greetingsMessage = this.generateRandomGreet();
-    } else if (isLoggedIn()) {
-      greetingsMessage = (
-        <p className="lead text-muted">
-          Aguarde a validação do seu usuário para poder visualizar as cartas.
-        </p>
-      )
-    } else {
-      greetingsMessage = (
-        <p className="lead text-muted">
-          <a href="/login">Entre</a> ou <a href="/signup">cadastre-se</a> para poder visualizar as cartas!
-        </p>
-      )
-    }
-
-    return (
-      <div className="col-lg-6 col-md-8 mx-auto">
-        <img className="mb-4 w-50" src="/img/logo.png" alt="logo" title="Inglês na Estrutural" />
-        <h1 className="fw-light">Bem-vindo(a) ao Papai Noel do InE!</h1>
-        {greetingsMessage}
-      </div>
     );
   }
 }

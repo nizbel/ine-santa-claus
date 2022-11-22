@@ -11,7 +11,7 @@ class NavBar extends React.Component {
   componentDidMount() {
     if (isAdmin()) {
       // Make request
-      axiosInstance().get('http://localhost:8080/users/list')
+      axiosInstance().get(baseUrl + '/users/list')
         .then(response => {
           // handle success
           const users = [];
@@ -46,7 +46,7 @@ class NavBar extends React.Component {
   handleChangeValidated(id) {
     if (isAdmin()) {
       // Make request
-      axiosInstance().post('http://localhost:8080/users/changeValidated/' + id)
+      axiosInstance().post(baseUrl + '/users/changeValidated/' + id)
         .then(response => {
           const editedUser = {...response.data, roles: response.data.roles.map(r => r.name)};
 
@@ -67,7 +67,7 @@ class NavBar extends React.Component {
   handleChangeAdmin(id) {
     if (isAdmin()) {
       // Make request
-      axiosInstance().post('http://localhost:8080/users/changeAdmin/' + id)
+      axiosInstance().post(baseUrl + '/users/changeAdmin/' + id)
         .then(response => {
           const editedUser = {...response.data, roles: response.data.roles.map(r => r.name)};
 
@@ -214,7 +214,7 @@ class Greetings extends React.Component {
     }
 
     // Make request
-    axiosInstance().get('http://localhost:8080/users/listAdoptedLetters')
+    axiosInstance().get(baseUrl + '/users/listAdoptedLetters')
       .then(response => {
         // handle success
         this.setState({
@@ -315,7 +315,7 @@ class LettersList extends React.Component {
 
   componentDidMount() {
     // Make request
-    axiosInstance().get('http://localhost:8080/letters/list')
+    axiosInstance().get(baseUrl + '/letters/list')
       .then(response => {
         // handle success
         this.setState({
@@ -380,7 +380,7 @@ class LettersList extends React.Component {
     }
 
     // Make edit request
-    axiosInstance().post('http://localhost:8080/letters/edit/' + this.state.currentLetter.id, this.state.currentLetter)
+    axiosInstance().post(baseUrl + '/letters/edit/' + this.state.currentLetter.id, this.state.currentLetter)
     .then(response => {
       const editedLetter = response.data;
       
@@ -481,7 +481,7 @@ class LettersList extends React.Component {
     }
 
     // Make request
-    axiosInstance().post('http://localhost:8080/letters/adopt/' + this.state.currentLetter.id)
+    axiosInstance().post(baseUrl + '/letters/adopt/' + this.state.currentLetter.id)
     .then(response => {      
       // hide modal
       this.state.viewModal.hide();
@@ -511,7 +511,7 @@ class LettersList extends React.Component {
     }
 
     // Make request
-    axiosInstance().post('http://localhost:8080/letters/abandon/' + this.state.currentLetter.id)
+    axiosInstance().post(baseUrl + '/letters/abandon/' + this.state.currentLetter.id)
     .then(response => {      
       // hide modal
       this.state.viewModal.hide();
@@ -686,7 +686,7 @@ if (storageUser != null) {
       }
   });
 
-  axiosInstance().get('http://localhost:8080/users/loggedUser')
+  axiosInstance().get(baseUrl + '/users/loggedUser')
   .then(response => {
     // handle success
     const user = {...storageUser, roles: response.data.roles.map(r => r.name)};

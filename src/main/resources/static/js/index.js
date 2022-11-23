@@ -271,10 +271,11 @@ class Greetings extends React.Component {
 }
 
 function Letter(props) {
+  const image = props.images[0].replace('.jpg', '.thumb.jpg').replace('.jpeg', '.thumb.jpeg');
   return (
     <div className="col">
       <div className="card shadow-sm">
-        <img className="bd-placeholder-img card-img-top" height="250" src={props.images[0]} />
+        <img className="bd-placeholder-img card-img-top" height="250" src={image} onClick={props.onVisualize} style={{'cursor': 'pointer'}}/>
         <div className="card-body">
           <div className="d-flex justify-content-between">
             <p><b>{props.name}</b></p>

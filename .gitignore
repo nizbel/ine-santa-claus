@@ -49,6 +49,7 @@ env.properties
 *.prod.*
 config.js
 build.sh
+*.p12
 
 # Image files
 *.jpeg

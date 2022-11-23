@@ -21,7 +21,6 @@ class LoginForm extends React.Component {
   }
   
   validateForm() {
-    console.log("validatin");
     let valid = true;
 
     const messages = {

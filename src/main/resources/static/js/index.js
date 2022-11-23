@@ -302,7 +302,6 @@ function Letter(props) {
 class LettersList extends React.Component {
   constructor(props) {
     super(props);
-    console.log(props);
     this.state = {
       isLoading: true,
       letters: [],
@@ -580,7 +579,7 @@ class LettersList extends React.Component {
   render() {
     const letters = [];
 
-    this.state.letters.forEach(letter => {
+    this.state.letters.sort(((a, b) => a.name.localeCompare(b.name))).forEach(letter => {
       if (this.state.visualizationType === 'adoptable' && letter.adopter) {
         return;
       } else if (this.state.visualizationType === 'myAdopted' && (!letter.adopter || letter.adopter.id !== this.state.user.id)) {

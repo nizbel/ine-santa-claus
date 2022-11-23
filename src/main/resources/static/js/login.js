@@ -58,7 +58,7 @@ class LoginForm extends React.Component {
       return;
     }
 
-    const {messages, ...loginRequest} = this.state;
+    const {messages, responseMessage, ...loginRequest} = this.state;
 
     // Make login request
     axios.post(baseUrl + '/auth/login', loginRequest)

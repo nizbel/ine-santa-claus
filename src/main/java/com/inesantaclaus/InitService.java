@@ -69,6 +69,38 @@ public class InitService {
       // Load letters with the files from S3
       LoadLetters();
       return true;
+    } else {
+      // Get all letters
+      List<Letter> letters = letterRepository.findAll();
+
+      // Get names
+      String s3Bucket = env.getProperty("inesantaclaus.app.s3_bucket");
+
+      // Get list of images
+      String response = restTemplate.getForObject(s3Bucket, 
+      String.class);
+
+      // Prepare regex search
+      Pattern imagePattern = Pattern.compile("<Key>([^\\/]+?)\\/Carta_(\\w+?)_[\\w\\d]+?\\.\\w+?<\\/Key>", Pattern.DOTALL | Pattern.UNICODE_CHARACTER_CLASS);
+
+      Matcher matcher = imagePattern.matcher(response);
+
+      while (matcher.find())  {
+        String imagePath = s3Bucket + matcher.group(0).replaceAll("<.+?>", "");
+
+        if (letters.stream().anyMatch(letter -> letter.getImagePath().get(0).equals(imagePath))) {
+          continue;
+        }
+
+        String name = matcher.group(2);
+        String ineClass = matcher.group(1);
+        List<String> images = new ArrayList<String>(Arrays.asList(imagePath));
+        Letter newLetter = new Letter(name, ineClass, images);
+        
+        letterRepository.save(newLetter);
+      }
+
+      // Compare if not exists
     }
       
     return false;

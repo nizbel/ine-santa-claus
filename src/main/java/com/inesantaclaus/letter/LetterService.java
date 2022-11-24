@@ -19,7 +19,7 @@ public class LetterService {
   @Autowired
   UserRepository userRepository;
 
-  public Letter detailLetter(Long id) {
+  public Letter get(Long id) {
     return repository.findById(id).orElseThrow();
   }
 

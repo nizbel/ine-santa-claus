@@ -18,6 +18,12 @@ public class LetterController {
   @Autowired
   LetterService service;
 
+  @GetMapping("/{id}")
+	@PreAuthorize("hasRole('USER')")
+  public Letter get(@PathVariable(value = "id") long id) {
+    return service.get(id);
+  }
+
   @GetMapping("/list")
 	@PreAuthorize("hasRole('USER')")
   public List<Letter> list() {

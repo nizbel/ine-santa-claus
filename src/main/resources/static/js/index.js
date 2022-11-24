@@ -309,7 +309,8 @@ class LettersList extends React.Component {
       editModal: null,
       viewModal: null,
       currentLetter: null,
-      visualizationType: 'all'
+      visualizationType: 'all',
+      viewModalMessage: ''
     }
   }
 
@@ -458,9 +459,27 @@ class LettersList extends React.Component {
   }
 
   showViewModal(letter) {
-    this.state.viewModal.show();
     this.setState({
-      currentLetter: letter
+      currentLetter: letter,
+      viewModalMessage: ''
+    }, () => this.state.viewModal.show());
+
+    // Update letter and show modal
+    axiosInstance().get(baseUrl + '/letters/' + letter.id)
+    .then(response => {    
+      const currentLetter = response.data;
+
+      const letters = [...this.state.letters.map(letter => letter.id !== currentLetter.id ? letter : currentLetter)];
+      // update letter
+      this.setState({
+        currentLetter: currentLetter,
+        letters: letters
+      });
+
+    })
+    .catch(error => {
+      // handle error
+      console.log(error);
     });
   }
 
@@ -474,7 +493,7 @@ class LettersList extends React.Component {
     return (<button type="button" className="btn btn-primary" onClick={() => this.handleAdopt()}>Adotar</button>);
   }
 
-  handleAdopt() {
+  handleAdopt(event) {
     // Has to be a validated user
     if (!isValidated()) {
       return;
@@ -483,10 +502,10 @@ class LettersList extends React.Component {
     // Make request
     axiosInstance().post(baseUrl + '/letters/adopt/' + this.state.currentLetter.id)
     .then(response => {      
-      // hide modal
-      this.state.viewModal.hide();
-
       if (response.data) {
+        // hide modal
+        this.state.viewModal.hide();
+
         const currentLetter = {...this.state.currentLetter, adopter: this.state.user};
 
         const letters = [...this.state.letters.map(letter => letter.id !== currentLetter.id ? letter : currentLetter)];
@@ -494,9 +513,12 @@ class LettersList extends React.Component {
         this.setState({
           currentLetter: null,
           letters: letters
-        })
+        });
+      } else {
+        this.setState({
+          viewModalMessage: 'Carta já foi adotada por outro usuário'
+        });
       }
-
     })
     .catch(error => {
       // handle error
@@ -524,7 +546,7 @@ class LettersList extends React.Component {
         this.setState({
           currentLetter: null,
           letters: letters
-        })
+        });
       }
 
     })
@@ -541,7 +563,9 @@ class LettersList extends React.Component {
     const letterAvailable = letter != null;
 
     const title = letterAvailable ? letter.name + ' (' + letter.age + ' anos)' : '';
-    const image = letterAvailable ? (<img className="bd-placeholder-img card-img-top" src={letter.imagePath[0]} />) : (null);
+    const image = letterAvailable ? (
+      <img className="bd-placeholder-img card-img-top" src={letter.imagePath[0]}/>) 
+      : null;
     const gift = letterAvailable && letter.giftSuggestion ? letter.giftSuggestion : 'Sem sugestão de presente, favor ler a carta';
 
     return (
@@ -558,6 +582,12 @@ class LettersList extends React.Component {
             </div>
             <div className="modal-footer flex-column align-items-stretch">
               <div className="text-center"><p>{gift}</p></div>
+              { this.state.viewModalMessage ?
+              <div className="alert alert-danger m-2 row" role="alert">
+                {this.state.viewModalMessage}
+              </div>
+              : null
+              }
               
               <div className="d-flex justify-content-between">
                 <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
@@ -617,9 +647,22 @@ class LettersList extends React.Component {
               className={`btn btn-sm btn-outline-secondary ${this.state.visualizationType  == 'myAdopted' ? 'active': ''}`}
                 >Minhas cartas</button>
             </div>
+            <div className="row text-center mt-3">
+              <h4>{letters.length} cartas</h4>
+            </div>
             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
               {letters}
             </div>
+            <div class="toast" id="myToast">
+              <div class="toast-header">
+                  <strong class="me-auto"><i class="bi-gift-fill"></i> We miss you!</strong>
+                  <small>10 mins ago</small>
+                  <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+              </div>
+              <div class="toast-body">
+                  It's been a long time since you visited us. We've something special for you. <a href="#">Click here!</a>
+              </div>
+          </div>
           </div>
         }
 

@@ -160,8 +160,8 @@ class SignupForm extends React.Component {
       <div className="form-floating mb-3">
         <input type="text" className="form-control" name="volunteer" value={this.state.volunteer} 
           placeholder="" onChange={(e) => this.handleInputChange(e)}/>
-        <label>Voluntário</label>
-        <div className="alert alert-warning" style={{maxWidth:"250px"}} role="alert">
+        <label>Nome do voluntário</label>
+        <div className="alert alert-warning" style={{maxWidth: '250px'}} role="alert">
           Caso não seja do DF, garanta que você consegue entregar o presente ao voluntário de alguma forma
         </div> 
         <p className="ms-1 text-start text-danger">{this.state.messages.volunteer}</p>

@@ -161,11 +161,14 @@ class SignupForm extends React.Component {
         <input type="text" className="form-control" name="volunteer" value={this.state.volunteer} 
           placeholder="" onChange={(e) => this.handleInputChange(e)}/>
         <label>Voluntário</label>
+        <div className="alert alert-warning" style={{maxWidth:"250px"}} role="alert">
+          Caso não seja do DF, garanta que você consegue entregar o presente ao voluntário de alguma forma
+        </div> 
         <p className="ms-1 text-start text-danger">{this.state.messages.volunteer}</p>
       </div>
     ) : (null);
     return ( 
-      <form method="post" className="needs-validation" onSubmit={(e) => this.handleSubmit(e)}>
+      <form method="post" className="needs-validation mb-3" onSubmit={(e) => this.handleSubmit(e)}>
         <h1 className="h3 mb-3 fw-normal">Novo cadastro</h1>
     
         <p className="ms-1 text-start text-danger">{this.state.responseMessage}</p>

@@ -8,6 +8,7 @@ class SignupForm extends React.Component {
       name: '',
       phone: '',
       userType: '',
+      volunteer: '',
       messages: {
         username: '',
         password: '',
@@ -15,6 +16,7 @@ class SignupForm extends React.Component {
         name: '',
         phone: '',
         userType: '',
+        volunteer: '',
       },
       responseMessage: ''
     };
@@ -93,8 +95,8 @@ class SignupForm extends React.Component {
       valid = false;
     }
 
-    if (!['USER_INE', 'USER_ASSOCIATION'].includes(this.state.userType)) {
-      messages.userType = 'Vínculo deve ser Voluntário InE ou Associado';
+    if (!['USER_INE', 'USER_RELATED_INE'].includes(this.state.userType)) {
+      messages.userType = 'Vínculo inválido';
       valid = false;
     }
 
@@ -154,6 +156,14 @@ class SignupForm extends React.Component {
   }
 
   render() {
+    const volunteerField = this.state.userType === "USER_RELATED_INE" ? (
+      <div className="form-floating mb-3">
+        <input type="text" className="form-control" name="volunteer" value={this.state.volunteer} 
+          placeholder="" onChange={(e) => this.handleInputChange(e)}/>
+        <label>Voluntário</label>
+        <p className="ms-1 text-start text-danger">{this.state.messages.volunteer}</p>
+      </div>
+    ) : (null);
     return ( 
       <form method="post" className="needs-validation" onSubmit={(e) => this.handleSubmit(e)}>
         <h1 className="h3 mb-3 fw-normal">Novo cadastro</h1>
@@ -171,23 +181,32 @@ class SignupForm extends React.Component {
           <label>Telefone</label>
           <p className="ms-1 text-start text-danger">{this.state.messages.phone}</p>
         </div>
-        <div className="form-floating mb-3">
-          <div className="form-check-inline">
+        <div className="form-floating mb-3 text-start">
+          <legend class="col-form-label">Vínculo</legend>
+          <div className="form-check">
             <input className="form-check-input" type="radio" name="userType" id="userTypeRadio1"
               value="USER_INE" checked={this.state.userType === "USER_INE"} onChange={(e) => this.handleUserTypeInputChange(e)} />
             <label className="form-check-label" htmlFor="userTypeRadio1">
               Voluntário InE
             </label>
           </div>
-          <div className="form-check-inline">
+          {/* <div className="form-check mt-2">
             <input className="form-check-input" type="radio" name="userType" id="userTypeRadio2"
               value="USER_ASSOCIATION" checked={this.state.userType === "USER_ASSOCIATION"} onChange={(e) => this.handleUserTypeInputChange(e)} />
             <label className="form-check-label"htmlFor="userTypeRadio2">
               Associado
             </label>
+          </div> */}
+          <div className="form-check mt-2">
+            <input className="form-check-input" type="radio" name="userType" id="userTypeRadio2"
+              value="USER_RELATED_INE" checked={this.state.userType === "USER_RELATED_INE"} onChange={(e) => this.handleUserTypeInputChange(e)} />
+            <label className="form-check-label"htmlFor="userTypeRadio2">
+              Conheço um Voluntário InE
+            </label>
           </div>
           <p className="ms-1 text-start text-danger">{this.state.messages.userType}</p>
         </div>
+        {volunteerField}
         <div className="form-floating mb-3">
           <input type="text" className="form-control" name="username" value={this.state.username} 
             placeholder="" onChange={(e) => this.handleInputChange(e)}/>

@@ -88,7 +88,24 @@ class NavBar extends React.Component {
   renderUsers() {
     const users = [];
     this.state.users.forEach(user => {
-      const userType = user.userType === 'USER_INE' ? 'Voluntário InE' : 'Associação';
+      let userType;
+      switch (user.userType) {
+        case 'USER_INE':
+          userType ='Voluntário InE';
+          break;
+
+        case 'USER_ASSOCIATION':
+          user.userType ='Associação';
+          break;
+
+        case 'USER_RELATED_INE':
+          userType =`Contato de ${user.volunteer}`;
+          break;
+
+        default:
+          userType ='Outros';
+          break;
+      }
       users.push(
         <div className="alert alert-info m-2 row" role="alert" key={user.id}>
           <div className="col-12 col-md-3">Nome: <strong>{user.name}</strong></div>

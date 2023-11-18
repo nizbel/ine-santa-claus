@@ -24,6 +24,9 @@ public class SignupRequest {
 
 	private EUserType userType;
 
+	@Size(max = 120)
+	private String volunteer;
+
   public String getUsername() {
     return username;
   }
@@ -62,6 +65,14 @@ public class SignupRequest {
 
   public void setUserType(EUserType userType) {
     this.userType = userType;
+  }
+
+  public String getVolunteer() {
+    return volunteer;
+  }
+
+  public void setVolunteer(String volunteer) {
+    this.volunteer = volunteer;
   }
 
 }

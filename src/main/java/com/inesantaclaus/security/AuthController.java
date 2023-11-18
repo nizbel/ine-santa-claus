@@ -25,6 +25,7 @@ import com.inesantaclaus.security.payload.LoginRequest;
 import com.inesantaclaus.security.payload.MessageResponse;
 import com.inesantaclaus.security.payload.SignupRequest;
 import com.inesantaclaus.security.services.UserDetailsImpl;
+import com.inesantaclaus.user.EUserType;
 import com.inesantaclaus.user.User;
 import com.inesantaclaus.user.UserRepository;
 
@@ -32,6 +33,7 @@ import com.inesantaclaus.user.UserRepository;
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
+
 	@Autowired
 	AuthenticationManager authenticationManager;
 
@@ -83,12 +85,20 @@ public class AuthController {
 					.body(new MessageResponse("Telefone indisponível!"));
 		}
 
+		// Check if user related to a volunteer filled the volunteer name
+		if (signUpRequest.getUserType() == EUserType.USER_RELATED_INE && "".equals(signUpRequest.getVolunteer())) {
+			return ResponseEntity
+				.badRequest()
+				.body(new MessageResponse("Nome do voluntário não preenchido!"));
+		}
+
 		// Create new user's account
 		User user = new User(signUpRequest.getUsername(), 
 							 encoder.encode(signUpRequest.getPassword()),
                signUpRequest.getName(),
                signUpRequest.getPhone(),
-							 signUpRequest.getUserType());
+							 signUpRequest.getUserType(),
+							 signUpRequest.getVolunteer());
 
 		userRepository.save(user);
 

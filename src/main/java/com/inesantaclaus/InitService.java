@@ -60,7 +60,8 @@ public class InitService {
         encoder.encode(env.getProperty("inesantaclaus.app.baseuser.password")),
         env.getProperty("inesantaclaus.app.baseuser.name"),
         env.getProperty("inesantaclaus.app.baseuser.phone"),
-        EUserType.USER_INE
+        EUserType.USER_INE,
+        ""
       );
 
       baseAdmin.setRoles(new HashSet<Role>(Arrays.asList(userRole, adminRole)));
@@ -88,6 +89,7 @@ public class InitService {
       while (matcher.find())  {
         String imagePath = s3Bucket + matcher.group(0).replaceAll("<.+?>", "");
 
+        // Compare if already exists
         if (letters.stream().anyMatch(letter -> letter.getImagePath().get(0).equals(imagePath))) {
           continue;
         }
@@ -100,7 +102,6 @@ public class InitService {
         letterRepository.save(newLetter);
       }
 
-      // Compare if not exists
     }
       
     return false;

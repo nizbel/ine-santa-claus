@@ -40,6 +40,10 @@ public class User {
 
 	private EUserType userType;
 
+	@Size(max = 120)
+	private String volunteer;
+
+
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(	name = "user_roles", 
 				joinColumns = @JoinColumn(name = "user_id"), 
@@ -49,12 +53,13 @@ public class User {
 	public User() {
 	}
 
-	public User(String username, String password, String name, String phone, EUserType userType) {
+	public User(String username, String password, String name, String phone, EUserType userType, String volunteer) {
 		this.username = username;
 		this.password = password;
 		this.name = name;
 		this.phone = phone;
 		this.userType = userType;
+		this.volunteer = volunteer;
 	}
 
 	public Long getId() {
@@ -111,5 +116,13 @@ public class User {
 
 	public void setUserType(EUserType userType) {
 		this.userType = userType;
+	}
+	
+	public String getVolunteer() {
+		return volunteer;
+	}
+
+	public void setVolunteer(String volunteer) {
+		this.volunteer = volunteer;
 	}
 }

@@ -56,4 +56,10 @@ public class LetterController {
   public Boolean abandon(@PathVariable long id) throws Exception {
     return service.abandon(id);
   }
+
+  @PostMapping("/delete/{id}") 
+	@PreAuthorize("hasRole('ADMIN')")
+  public Boolean delete(@PathVariable long id) throws Exception {
+    return service.delete(id);
+  }
 }

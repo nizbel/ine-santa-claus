@@ -72,4 +72,15 @@ public class LetterService {
     repository.abandonLetterById(id, loggedUser);
     return true;
   }
+
+  public boolean delete(Long id) {
+    // Check letter amount
+    int initialAmount = repository.findAll().size();
+
+    Letter letter = repository.findById(id).orElseThrow();
+
+    repository.delete(letter);
+
+    return repository.findAll().size() - initialAmount != 0;
+  }
 }

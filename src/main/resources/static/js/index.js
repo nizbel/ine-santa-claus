@@ -282,6 +282,7 @@ class Greetings extends React.Component {
         <img className="mb-4 w-50" src="/img/logo.png" alt="logo" title="Inglês na Estrutural" />
         <h1 className="fw-light">Bem-vindo(a) ao Papai Noel do InE!</h1>
         {greetingsMessage}
+        <p className="text-success fs-5">Data de entrega dos presentes: <b>09/12/2024</b></p>
       </div>
     );
   }

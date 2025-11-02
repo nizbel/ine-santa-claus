@@ -9,6 +9,8 @@ Use the reload script with `./reload.sh` on the project root
 * Run `./build.sh` to generate the new images
 * Upload images 
 * Run `terraform apply`
+* Wait until all commands are run by Terraform runcmd
+* Run certbot inside nginx container
 
 ## How to remove server once usage is over
 Just run `terraform destroy` to end the EC2 instance and the bucket

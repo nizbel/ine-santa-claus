@@ -11,4 +11,7 @@ COPY env.prod.properties /env.properties
 COPY base.prod.js /app/static/js/base.js
 COPY keystore.p12 /keystore.p12
 
+EXPOSE 80
+EXPOSE 443
+
 ENTRYPOINT ["java","-cp","app:app/lib/*","com.inesantaclaus.Application"]

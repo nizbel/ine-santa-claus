@@ -284,7 +284,7 @@ class Greetings extends React.Component {
         {greetingsMessage}
         <h2 className="text-success">IMPORTANTE</h2>
         <p className="text-success fs-5">Os pedidos nas cartas são opções, ao adotar uma cartinha escolha uma das opções</p>
-        <p className="text-success fs-5">Data de entrega dos presentes: <b>09/12/2024</b></p>
+        <p className="text-success fs-5">Data de entrega dos presentes: <b>08/12/2025</b></p>
       </div>
     );
   }

@@ -2,16 +2,21 @@ package com.inesantaclaus.letter;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.inesantaclaus.security.jwt.AuthTokenFilter;
 import com.inesantaclaus.user.User;
 import com.inesantaclaus.user.UserRepository;
 
 @Service
 public class LetterService {
+
+	private static final Logger logger = LoggerFactory.getLogger(LetterService.class);
 
   @Autowired
   LetterRepository repository;
@@ -29,6 +34,10 @@ public class LetterService {
 
   public Letter create(Letter letter) {
     return repository.save(letter);
+  }
+
+  public void createByFile(byte[] file) {
+    System.out.println(file);
   }
 
   public Letter edit(Letter letter) {

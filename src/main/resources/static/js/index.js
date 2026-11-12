@@ -4,6 +4,7 @@ class NavBar extends React.Component {
     this.state = {
       user: props.user,
       validateModal: null,
+      addLetterModal: null,
       users: []
     }
   }
@@ -29,7 +30,8 @@ class NavBar extends React.Component {
         });
 
       this.setState({
-        validateModal: new bootstrap.Modal(document.getElementById('validateModal'))
+        validateModal: new bootstrap.Modal(document.getElementById('validateModal')),
+        addLetterModal: new bootstrap.Modal(document.getElementById('addLetterModal'))
       });
     }
   }
@@ -41,6 +43,15 @@ class NavBar extends React.Component {
     }
 
     this.state.validateModal.show();
+  }
+
+  showAddLetterModal() {
+    // Has to be admin
+    if (!isAdmin()) {
+      return;
+    }
+
+    this.state.addLetterModal.show();
   }
 
   handleChangeValidated(id) {
@@ -162,11 +173,52 @@ class NavBar extends React.Component {
     );
   }
 
+  renderLetterUpload() {
+    
+
+    return (
+      <div>
+        <LetterUploader />
+      </div>
+    );
+  }
+
+
+  renderAddLetterModal() {
+    // Check if admin
+    if (!isAdmin()) {
+      return null;
+    }
+
+    return (
+      <div className="modal fade" id="addLetterModal" tabIndex="-1" role="dialog" aria-labelledby="addLetterModalLabel" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-scrollable" role="document" 
+        style={{marginLeft: "5vw"}}>
+          <div className="modal-content" style={{width: "90vw"}}>
+            <div className="modal-header">
+              <h5 className="modal-title" id="addLetterModalLabel">Adicionar cartas</h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div className="modal-body p-0">
+              {this.renderLetterUpload()}
+            </div>
+            <div className="modal-footer flex-column align-items-stretch">              
+              <div className="d-flex justify-content-end">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   render() {
     const options = [];
     
     if (isLoggedIn()) {
       if (isAdmin()) {
+        options.push(<li><a href="#" onClick={() => this.showAddLetterModal()} className="text-white">Adicionar cartas</a></li>);
         options.push(<li><a href="#" onClick={() => this.showValidateModal()} className="text-white">Administrar usuários</a></li>);
       }
       options.push(<li><a href="#" onClick={logout} className="text-white">Sair</a></li>);
@@ -186,7 +238,7 @@ class NavBar extends React.Component {
                 <h4 className="text-white">Sobre</h4>
                 <p className="text-white">
                   Essa página foi criada por <a 
-                  className="text-white" href="https://twitter.com/gui_niz">@gui_niz</a> e o código-fonte está disponível no <a 
+                  className="text-white" href="https://www.instagram.com/gui.niz">@gui.niz</a> e o código-fonte está disponível no <a 
                   className="text-white" href="https://github.com/nizbel/ine-santa-claus">GitHub</a>
                 </p>
               </div>
@@ -210,6 +262,7 @@ class NavBar extends React.Component {
           </div>
         </div>
         {this.renderValidateModal()}
+        {this.renderAddLetterModal()}
       </div>
     );
   }
@@ -284,7 +337,7 @@ class Greetings extends React.Component {
         {greetingsMessage}
         <h2 className="text-success">IMPORTANTE</h2>
         <p className="text-success fs-5">Os pedidos nas cartas são opções, ao adotar uma cartinha escolha uma das opções</p>
-        <p className="text-success fs-5">Data de entrega dos presentes: <b>08/12/2025</b></p>
+        <p className="text-success fs-5">Data de entrega dos presentes: <b></b></p>
       </div>
     );
   }
@@ -690,6 +743,95 @@ class LettersList extends React.Component {
         {this.renderViewModal()}
       </div>
 
+    );
+  }
+}
+
+class LetterUploader extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      file: null,
+      status: 'idle',
+      uploadProgress: 0
+    }
+  }
+
+  handleFileChange(event) {
+    if (event.target.files) {
+      this.setState({ file: event.target.files[0] });
+    }
+  }
+
+  async handleFileUpload() {
+    if (!this.state.file) return;
+
+    this.setState({ status: 'uploading', uploadProgress: 0 });
+
+    const formData = new FormData();
+    formData.append('file', this.state.file);
+
+    try {
+      //axiosInstance().post(baseUrl + '/letters/add/file' )
+      await axiosInstance().post(baseUrl + '/letters/add/file', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          const progress = progressEvent.total
+            ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            : 0;
+        this.setState({ uploadProgress: progress });
+        },
+      });
+
+      this.setState({ status: 'success', uploadProgress: 100 });
+    } catch (e) {
+      this.setState({ status: 'error', uploadProgress: 0 });
+    }
+  }
+
+  render() {
+    const file = this.state.file;
+    const status = this.state.status;
+    const uploadProgress = this.state.uploadProgress;
+
+    return (
+      <div className="space-y-2">
+        <input type="file" onChange={(e) => this.handleFileChange(e)} />
+
+        {file && (
+          <div className="mb-4 text-sm">
+            <p>File name: {file.name}</p>
+            <p>Size: {(file.size / 1024).toFixed(2)} KB</p>
+            <p>Type: {file.type}</p>
+          </div>
+        )}
+
+        {status === 'uploading' && (
+          <div className="space-y-2">
+            <div className="h-2.5 w-full rounded-full bg-gray-200">
+              <div
+                className="h-2.5 rounded-full bg-blue-600 transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-gray-600">{uploadProgress}% uploaded</p>
+          </div>
+        )}
+
+        {file && status !== 'uploading' && (
+          <button onClick={() => this.handleFileUpload()}>Upload</button>
+        )}
+
+        {status === 'success' && (
+          <p className="text-sm text-green-600">File uploaded successfully!</p>
+        )}
+
+        {status === 'error' && (
+          <p className="text-sm text-red-600">Upload failed. Please try again.</p>
+        )}
+      </div>
     );
   }
 }

@@ -50,29 +50,25 @@ public class LetterController {
 
   @PostMapping("/add/file")
 	@PreAuthorize("hasRole('ADMIN')")
-  public String createByUpload(@RequestBody MultipartFile file) throws Exception{ 
-    try {
-      Path uploadPath = Paths.get("uploads/");
+  public String createByUpload(@RequestBody MultipartFile file) throws Exception { 
+    // Path uploadPath = Paths.get("uploads/");
 
-      if (!Files.exists(uploadPath)) {
-        Files.createDirectories(uploadPath);
-      }
+    // if (!Files.exists(uploadPath)) {
+    //   Files.createDirectories(uploadPath);
+    // }
 
-      logger.info("Received file: " + file.getOriginalFilename() + " with " + file.getSize() + " bytes");
-      Path filePath = uploadPath.resolve(file.getOriginalFilename());
-      
-      // file.transferTo(filePath.toFile());
-      try (InputStream is = file.getInputStream()) {
-          Files.copy(is, filePath);
-      }
+    // logger.info("Received file: " + file.getOriginalFilename() + " with " + file.getSize() + " bytes");
+    // Path filePath = uploadPath.resolve(file.getOriginalFilename());
+    
+    // // file.transferTo(filePath.toFile());
+    // try (InputStream is = file.getInputStream()) {
+    //     Files.copy(is, filePath);
+    // }
 
-      logger.info("Saved");
-      return "File uploaded: " + filePath.getFileName();
+    service.createByFile(file);
 
-    } catch (IOException | IllegalStateException e) {
-      logger.error(e.getLocalizedMessage());
-      throw new Exception(e.getLocalizedMessage());
-    }
+    logger.info("Saved");
+    return "File uploaded: " + file.getOriginalFilename();    
   }
 
   @PostMapping("/edit/{id}") 

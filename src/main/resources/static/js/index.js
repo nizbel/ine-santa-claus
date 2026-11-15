@@ -5,6 +5,7 @@ class NavBar extends React.Component {
       user: props.user,
       validateModal: null,
       addLetterModal: null,
+      showAddLetterModal: false,
       users: []
     }
   }
@@ -52,6 +53,7 @@ class NavBar extends React.Component {
     }
 
     this.state.addLetterModal.show();
+    this.setState({ showAddLetterModal: this.state.addLetterModal._isShown });
   }
 
   handleChangeValidated(id) {
@@ -174,15 +176,16 @@ class NavBar extends React.Component {
   }
 
   renderLetterUpload() {
-    
-
     return (
       <div>
-        <LetterUploader />
+        {this.state.showAddLetterModal && <LetterUploader/>}
       </div>
     );
   }
 
+  resetUpload() {
+    this.setState({ showAddLetterModal: this.state.addLetterModal._isShown });
+  }
 
   renderAddLetterModal() {
     // Check if admin
@@ -197,14 +200,14 @@ class NavBar extends React.Component {
           <div className="modal-content" style={{width: "90vw"}}>
             <div className="modal-header">
               <h5 className="modal-title" id="addLetterModalLabel">Adicionar cartas</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={() => this.resetUpload()}></button>
             </div>
             <div className="modal-body p-0">
               {this.renderLetterUpload()}
             </div>
             <div className="modal-footer flex-column align-items-stretch">              
               <div className="d-flex justify-content-end">
-                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" className="btn btn-secondary" onClick={() => this.resetUpload()} data-bs-dismiss="modal">Fechar</button>
               </div>
             </div>
           </div>
@@ -337,6 +340,7 @@ class Greetings extends React.Component {
         {greetingsMessage}
         <h2 className="text-success">IMPORTANTE</h2>
         <p className="text-success fs-5">Os pedidos nas cartas são opções, ao adotar uma cartinha escolha uma das opções</p>
+        <p className="text-success fs-5">Adote uma carta até <b>30/11/2026</b></p>
         <p className="text-success fs-5">Data de entrega dos presentes: <b></b></p>
       </div>
     );
@@ -344,7 +348,7 @@ class Greetings extends React.Component {
 }
 
 function Letter(props) {
-  const image = props.images[0].replace('.jpg', '.thumb.jpg').replace('.jpeg', '.thumb.jpeg');
+  const image = props.images[0].replace('.jpeg', '.thumb.jpeg').replace('.jpg', '.thumb.jpeg');
   return (
     <div className="col">
       <div className="card shadow-sm">
@@ -751,7 +755,7 @@ class LetterUploader extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      file: null,
+      files: null,
       status: 'idle',
       uploadProgress: 0
     }
@@ -759,20 +763,22 @@ class LetterUploader extends React.Component {
 
   handleFileChange(event) {
     if (event.target.files) {
-      this.setState({ file: event.target.files[0] });
+      this.setState({ files: event.target.files });
     }
   }
 
   async handleFileUpload() {
-    if (!this.state.file) return;
+    if (!this.state.files) return;
 
     this.setState({ status: 'uploading', uploadProgress: 0 });
 
     const formData = new FormData();
-    formData.append('file', this.state.file);
+    for (let i = 0; i < this.state.files.length; i++) {
+      const file = this.state.files[i];
+      formData.append('files', file);
+    }
 
     try {
-      //axiosInstance().post(baseUrl + '/letters/add/file' )
       await axiosInstance().post(baseUrl + '/letters/add/file', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -785,51 +791,60 @@ class LetterUploader extends React.Component {
         },
       });
 
-      this.setState({ status: 'success', uploadProgress: 100 });
+      this.setState({ status: 'success', uploadProgress: 100, isLoading: true });
     } catch (e) {
       this.setState({ status: 'error', uploadProgress: 0 });
     }
   }
 
   render() {
-    const file = this.state.file;
+    const files = [];
     const status = this.state.status;
     const uploadProgress = this.state.uploadProgress;
 
-    return (
-      <div className="space-y-2">
-        <input type="file" onChange={(e) => this.handleFileChange(e)} />
+    if (this.state.files) {
+      for (let i = 0; i < this.state.files.length; i++) {
+        const file = this.state.files[i];
 
-        {file && (
-          <div className="mb-4 text-sm">
-            <p>File name: {file.name}</p>
-            <p>Size: {(file.size / 1024).toFixed(2)} KB</p>
-            <p>Type: {file.type}</p>
-          </div>
-        )}
+        files.push(<div className="m-2 row">
+          <div className="col-12 col-md-3">Nome: <strong>{file.name}</strong></div>
+          <div className="col-12 col-md-2">Tamanho: <strong>{(file.size / 1024).toFixed(2)} KB</strong></div>
+          <div className="col-12 col-md-3">Tipo: <strong>{file.type}</strong></div>
+        </div>);
+      }
+    }
+
+    return (
+      <div>
+        <div className="m-2 d-flex justify-content-between">
+          <input type="file" className="btn btn-primary" multiple onChange={(e) => this.handleFileChange(e)} 
+            accept="image/jpg, image/jpeg"/>
+
+          {files.length > 0 && status !== 'uploading' && (
+            <button type="button" className="btn btn-primary" onClick={() => this.handleFileUpload()}>Upload</button>
+          )}
+        </div>
+
+        {files}
 
         {status === 'uploading' && (
-          <div className="space-y-2">
+          <div className="m-2">
             <div className="h-2.5 w-full rounded-full bg-gray-200">
               <div
                 className="h-2.5 rounded-full bg-blue-600 transition-all duration-300"
                 style={{ width: `${uploadProgress}%` }}
               ></div>
             </div>
-            <p className="text-sm text-gray-600">{uploadProgress}% uploaded</p>
+            <p className="text-sm text-gray-600">{uploadProgress}% carregado</p>
           </div>
         )}
 
-        {file && status !== 'uploading' && (
-          <button onClick={() => this.handleFileUpload()}>Upload</button>
-        )}
-
         {status === 'success' && (
-          <p className="text-sm text-green-600">File uploaded successfully!</p>
+          <p className="text-sm text-green-600">Arquivos enviados com sucesso!</p>
         )}
 
         {status === 'error' && (
-          <p className="text-sm text-red-600">Upload failed. Please try again.</p>
+          <p className="text-sm text-red-600">Upload falhou. Por favor tente novamente.</p>
         )}
       </div>
     );

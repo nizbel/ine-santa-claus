@@ -1,7 +1,16 @@
 package com.inesantaclaus.letter;
 
-import java.io.IOException;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.imageio.ImageIO;
+import javax.transaction.Transactional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +22,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.inesantaclaus.security.PureJavaAwsSigV4Interceptor;
 import com.inesantaclaus.user.User;
 import com.inesantaclaus.user.UserRepository;
 
@@ -39,6 +48,19 @@ public class LetterService {
 
   public LetterService(RestTemplateBuilder restTemplateBuilder) {
       this.restTemplate = restTemplateBuilder.build();
+
+  }
+
+  @PostConstruct 
+  public void init() {
+      String accessKey = env.getProperty("inesantaclaus.app.s3_bucket.username");
+      String secretKey = env.getProperty("inesantaclaus.app.s3_bucket.access_key");
+      String region = "us-east-2";
+      String service = "s3"; 
+
+      this.restTemplate.setInterceptors(Collections.singletonList(
+          new PureJavaAwsSigV4Interceptor(accessKey, secretKey, region, service)
+      ));
   }
 
   public Letter get(Long id) {
@@ -53,22 +75,94 @@ public class LetterService {
     return repository.save(letter);
   }
 
-  public void createByFile(MultipartFile file) throws IOException {
+  public void createByFile(MultipartFile file) throws Exception {
     String s3Bucket = env.getProperty("inesantaclaus.app.s3_bucket");
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-    headers.setContentLength(file.getSize());   
+    String filename = file.getOriginalFilename();
+    int fileTypeIndex = filename.lastIndexOf('.');
+    String baseFilename = filename.substring(0,fileTypeIndex);
 
-    MultiValueMap<String, Object> body  = new LinkedMultiValueMap<>();
-    body.add("key", file.getOriginalFilename());
-    body.add("file", file.getBytes());
-    HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
+    // Check if file exists already
+    boolean fileExists = false;
+    try {
+      String response = restTemplate.getForObject(s3Bucket + filename, 
+        String.class);
+      fileExists = response != null && !response.contains("<Code>NoSuchKey</Code>");
+    } catch (HttpClientErrorException e) {
+      logger.error(e.getLocalizedMessage());
+    }
+
+    if (fileExists) {
+      repository.findAll().forEach((letter) -> {
+        delete(letter.getId());
+      });
+      throw new Exception("Arquivo já existe");
+    }
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.IMAGE_JPEG);
+    headers.setContentLength(file.getSize());
+
+    HttpEntity<byte[]> request = new HttpEntity<>(file.getBytes(), headers);
 
     // Post letter
-    String response = restTemplate.postForObject(s3Bucket, request, String.class);
+    restTemplate.put(s3Bucket + filename, request);
 
-    logger.info(response);
+    // Generate thumb
+    BufferedImage original = ImageIO.read(file.getInputStream());
+
+    // Define ratio
+    double ratio = Math.min((double) 370 / original.getWidth(), (double) 300 / original.getHeight());
+    int targetWidth = (int) (original.getWidth() * ratio);
+    int targetHeight = (int) (original.getHeight() * ratio);
+
+    BufferedImage thumbnail = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+    thumbnail.getGraphics().drawImage(original, 0, 0, targetWidth, targetHeight, null);
+    thumbnail.getGraphics().dispose();
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    ImageIO.write(thumbnail, "jpg", outputStream);
+
+    // Prepare request
+    HttpHeaders headersThumb = new HttpHeaders();
+    headersThumb.setContentType(MediaType.IMAGE_JPEG);
+    headersThumb.setContentLength(outputStream.toByteArray().length);   
+
+    // Prepare thumb filename
+    String thumbFilename = baseFilename + ".thumb.jpeg";
+    request = new HttpEntity<>(outputStream.toByteArray(), headers);
+
+    // Post thumb
+    restTemplate.put(s3Bucket + thumbFilename, request);
+
+    String[] fileNameParts = filename.split("[_\\-\\.]");
+
+    String name = "";
+    String ineClass = "";
+    List<String> images = new ArrayList<String>(Arrays.asList(env.getProperty("inesantaclaus.app.s3_bucket") + filename));
+
+    // Iterates by name ignorando final part (file type)
+    for (int i = 0; i < fileNameParts.length-1; i++) {
+      String part = fileNameParts[i];
+      if (part.toLowerCase().equals("carta")) {
+        continue;
+      }
+
+      if (part.toLowerCase().startsWith("kids") || part.toLowerCase().startsWith("teens")) {
+        ineClass = part.replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2");
+      } else if (name.equals("")) {
+        name = part.replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2");
+      }
+    }
+    Letter newLetter = new Letter(name, ineClass, images);
+      
+    repository.save(newLetter);
+  }
+
+  @Transactional
+  public void createByFiles(MultipartFile[] files) throws Exception {
+    for (MultipartFile file : files) {
+      createByFile(file);
+    }
   }
 
   public Letter edit(Letter letter) {
@@ -114,13 +208,21 @@ public class LetterService {
   }
 
   public boolean delete(Long id) {
+
     // Check letter amount
     int initialAmount = repository.findAll().size();
 
     Letter letter = repository.findById(id).orElseThrow();
 
+    // Delete file related first
+    deleteLetterFile(letter.getImagePath().get(0));
+
     repository.delete(letter);
 
     return repository.findAll().size() - initialAmount != 0;
+  }
+
+  private void deleteLetterFile(String fileName) {
+    restTemplate.delete(fileName);
   }
 }

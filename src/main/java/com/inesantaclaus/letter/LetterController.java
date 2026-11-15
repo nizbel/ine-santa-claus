@@ -1,23 +1,18 @@
 package com.inesantaclaus.letter;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -48,27 +43,18 @@ public class LetterController {
     return service.create(letter);
   }
 
-  @PostMapping("/add/file")
+  @PostMapping(value = "/add/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
-  public String createByUpload(@RequestBody MultipartFile file) throws Exception { 
-    // Path uploadPath = Paths.get("uploads/");
+  public String createByUpload(@RequestPart(required = true, value = "files") MultipartFile files[]) throws Exception { 
+    System.out.println("FILES: " + files.length);
+    for (MultipartFile file : files) {
+      System.out.println(file.getOriginalFilename() + "->" + file.getSize());
+    }
 
-    // if (!Files.exists(uploadPath)) {
-    //   Files.createDirectories(uploadPath);
-    // }
-
-    // logger.info("Received file: " + file.getOriginalFilename() + " with " + file.getSize() + " bytes");
-    // Path filePath = uploadPath.resolve(file.getOriginalFilename());
-    
-    // // file.transferTo(filePath.toFile());
-    // try (InputStream is = file.getInputStream()) {
-    //     Files.copy(is, filePath);
-    // }
-
-    service.createByFile(file);
+    service.createByFiles(files);
 
     logger.info("Saved");
-    return "File uploaded: " + file.getOriginalFilename();    
+    return "File uploaded: " + files[0].getOriginalFilename();    
   }
 
   @PostMapping("/edit/{id}") 

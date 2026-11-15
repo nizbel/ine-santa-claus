@@ -791,8 +791,11 @@ class LetterUploader extends React.Component {
         },
       });
 
-      this.setState({ status: 'success', uploadProgress: 100, isLoading: true });
+      this.setState({ status: 'success', uploadProgress: 100 });
+
+      reloadLetters();
     } catch (e) {
+      console.log(e);
       this.setState({ status: 'error', uploadProgress: 0 });
     }
   }
@@ -892,11 +895,24 @@ function formatPhone(phone) {
   } 
 }
 
+function reloadLetters() {
+  const user = getUser();
+  if (user != null) {
+
+    lettersRoot.unmount();
+    lettersRoot = ReactDOM.createRoot(document.getElementById("album"));
+    lettersRoot.render(<LettersList user={user}/>);
+  }
+}
+
 // Starting code
 const storageUser = getUser();
 
 // Prepare base for axios instance
 let reqInstance = null;
+
+let lettersRoot;
+
 
 if (storageUser != null) {
   // Prepare axios instance with access token
@@ -920,7 +936,7 @@ if (storageUser != null) {
     greetingsRoot.render(<Greetings user={user}/>);
 
     if (isValidated()) {
-      const lettersRoot = ReactDOM.createRoot(document.getElementById("album"));
+      lettersRoot = ReactDOM.createRoot(document.getElementById("album"));
       lettersRoot.render(<LettersList user={user}/>);
     }
   })

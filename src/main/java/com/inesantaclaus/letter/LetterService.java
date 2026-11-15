@@ -138,7 +138,8 @@ public class LetterService {
 
     String name = "";
     String ineClass = "";
-    List<String> images = new ArrayList<String>(Arrays.asList(env.getProperty("inesantaclaus.app.s3_bucket") + filename));
+    List<String> images = new ArrayList<String>(Arrays.asList(
+      s3Bucket + filename, s3Bucket + thumbFilename));
 
     // Iterates by name ignorando final part (file type)
     for (int i = 0; i < fileNameParts.length-1; i++) {
@@ -214,8 +215,10 @@ public class LetterService {
 
     Letter letter = repository.findById(id).orElseThrow();
 
-    // Delete file related first
-    deleteLetterFile(letter.getImagePath().get(0));
+    // Delete files related first
+    for (String imagePath : letter.getImagePath()) {
+      deleteLetterFile(imagePath);
+    }
 
     repository.delete(letter);
 

@@ -276,7 +276,10 @@ class Greetings extends React.Component {
     super(props);
     this.state = {
       user: props.user,
-      adoptedLetters: []
+      eventInfo: null,
+      editMode: false,
+      editedInfo: null,
+      greetingsMessage: null
     }
   }
 
@@ -287,12 +290,10 @@ class Greetings extends React.Component {
     }
 
     // Make request
-    axiosInstance().get('/users/listAdoptedLetters')
+    axiosInstance().get('/event/list')
       .then(response => {
         // handle success
-        this.setState({
-          adoptedLetters: response.data
-        });
+        this.setState({ eventInfo: response.data[0] });
       })
       .catch(error => {
         // handle error
@@ -315,10 +316,50 @@ class Greetings extends React.Component {
     }
   }
 
+  editDates() {
+    this.setState({ editMode: true, editedInfo: {...this.state.eventInfo} });
+  }
+
+  handleDatesEditInput(event) {
+    event.preventDefault();
+    // Has to be admin
+    if (!isAdmin()) {
+      return;
+    }
+
+    const target = event.target;
+    const editedInfo = {...this.state.editedInfo, [target.name]: target.value}
+    this.setState({
+      editedInfo
+    });
+  }
+
+  saveDates() {
+    this.setState({ editMode: false });
+
+    // Make request
+    axiosInstance().post('/event/edit/' + this.state.editedInfo.id, this.state.editedInfo)
+      .then(response => {
+        // handle success
+        this.setState({ eventInfo: response.data });
+      })
+      .catch(error => {
+        // handle error
+        console.log(error);
+      });
+  }
+
+  cancelEditDates() {
+    this.setState({ editMode: false });
+  }
+
   render() {
     let greetingsMessage;
     if (isValidated()) {
-      greetingsMessage = this.generateRandomGreet();
+      if (this.state.greetingsMessage === null) {
+        this.setState({ greetingsMessage: this.generateRandomGreet()});
+      }
+      greetingsMessage = this.state.greetingsMessage;
     } else if (isLoggedIn()) {
       greetingsMessage = (
         <p className="lead text-muted">
@@ -333,6 +374,9 @@ class Greetings extends React.Component {
       )
     }
 
+    const eventInfo = this.state.eventInfo;
+    const editedInfo = this.state.editedInfo;
+
     return (
       <div className="col-lg-6 col-md-8 mx-auto">
         <img className="mb-4 w-50" src="/img/logo.png" alt="logo" title="Inglês na Estrutural" />
@@ -340,8 +384,26 @@ class Greetings extends React.Component {
         {greetingsMessage}
         <h2 className="text-success">IMPORTANTE</h2>
         <p className="text-success fs-5">Os pedidos nas cartas são opções, ao adotar uma cartinha escolha uma das opções</p>
-        <p className="text-success fs-5">Adote uma carta até <b>30/11/2026</b></p>
-        <p className="text-success fs-5">Data de entrega dos presentes: <b></b></p>
+        
+        {!this.state.editMode ? 
+        <p className="text-success fs-5">Adote uma carta até <b>{eventInfo && eventInfo.letterAdoptionDeadline}</b></p> :
+        <p className="text-success fs-5">Adote uma carta até 
+          <input type="text" className="form-control ms-3" name="letterAdoptionDeadline" value={editedInfo.letterAdoptionDeadline} 
+          placeholder="" onChange={(e) => this.handleDatesEditInput(e)} style={{display: 'unset', width: 'auto'}}/>
+        </p> }
+        {!this.state.editMode ? 
+        <p className="text-success fs-5">Data de entrega dos presentes: <b>{eventInfo && eventInfo.giftDeliveryDeadline}</b></p> :
+        <p className="text-success fs-5">Data de entrega dos presentes:
+          <input type="text" className="form-control ms-3" name="giftDeliveryDeadline" value={editedInfo.giftDeliveryDeadline} 
+          placeholder="" onChange={(e) => this.handleDatesEditInput(e)} style={{display: 'unset', width: 'auto'}}/>
+        </p> }
+        
+        { isAdmin() && !this.state.editMode && 
+        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => this.editDates()}>Editar datas</button> }
+        { isAdmin() && this.state.editMode && 
+        <button type="button" className="btn btn-sm btn-outline-secondary mx-1" onClick={() => this.saveDates()}>Salvar</button> }
+        { isAdmin() && this.state.editMode && 
+        <button type="button" className="btn btn-sm btn-outline-secondary mx-1" onClick={() => this.cancelEditDates()}>Cancelar</button> }
       </div>
     );
   }
@@ -572,7 +634,7 @@ class LettersList extends React.Component {
         <form method="post" onSubmit={(e) => this.handleEdit(e)}>  
           <div className="d-flex mb-3">  
             <div className="form-floating flex-fill me-5">
-              <input type="text" className="form-control ml-3" name="name" value={letter.name} 
+              <input type="text" className="form-control ms-3" name="name" value={letter.name} 
                 placeholder="" onChange={(e) => this.handleLetterEditInput(e)}/>
               <label htmlFor="floatingInput">Nome</label>
             </div>

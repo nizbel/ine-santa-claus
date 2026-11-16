@@ -66,6 +66,7 @@ public class WebSecurityConfig {
         .antMatchers("/auth/**").permitAll()
         .antMatchers("/init").permitAll()
         .antMatchers("/*").permitAll()
+        .antMatchers("/event/list").permitAll()
         .anyRequest().authenticated();
 
     http.authenticationProvider(authenticationProvider());

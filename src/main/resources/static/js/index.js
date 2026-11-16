@@ -284,11 +284,6 @@ class Greetings extends React.Component {
   }
 
   componentDidMount() {
-    // Check if user is logged in
-    if (!isValidated()) {
-      return;
-    }
-
     // Make request
     axiosInstance().get('/event/list')
       .then(response => {

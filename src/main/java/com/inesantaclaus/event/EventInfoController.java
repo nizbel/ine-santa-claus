@@ -23,21 +23,13 @@ public class EventInfoController {
   EventInfoService service;
 
   @GetMapping("/{id}")
-	@PreAuthorize("hasRole('USER')")
   public EventInfo get(@PathVariable(value = "id") long id) {
     return service.get(id);
   }
 
   @GetMapping("/list")
-	@PreAuthorize("hasRole('USER')")
   public List<EventInfo> list() {
     return service.listInfo();
-  }
-
-  @PostMapping("/add")
-	@PreAuthorize("hasRole('ADMIN')")
-  public EventInfo create(@RequestBody EventInfo letter) {
-    return service.create(letter);
   }
 
   @PostMapping("/edit/{id}") 

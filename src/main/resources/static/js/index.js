@@ -13,7 +13,7 @@ class NavBar extends React.Component {
   componentDidMount() {
     if (isAdmin()) {
       // Make request
-      axiosInstance().get(baseUrl + '/users/list')
+      axiosInstance().get('/users/list')
         .then(response => {
           // handle success
           const users = [];
@@ -59,7 +59,7 @@ class NavBar extends React.Component {
   handleChangeValidated(id) {
     if (isAdmin()) {
       // Make request
-      axiosInstance().post(baseUrl + '/users/changeValidated/' + id)
+      axiosInstance().post('/users/changeValidated/' + id)
         .then(response => {
           const editedUser = {...response.data, roles: response.data.roles.map(r => r.name)};
 
@@ -80,7 +80,7 @@ class NavBar extends React.Component {
   handleChangeAdmin(id) {
     if (isAdmin()) {
       // Make request
-      axiosInstance().post(baseUrl + '/users/changeAdmin/' + id)
+      axiosInstance().post('/users/changeAdmin/' + id)
         .then(response => {
           const editedUser = {...response.data, roles: response.data.roles.map(r => r.name)};
 
@@ -287,7 +287,7 @@ class Greetings extends React.Component {
     }
 
     // Make request
-    axiosInstance().get(baseUrl + '/users/listAdoptedLetters')
+    axiosInstance().get('/users/listAdoptedLetters')
       .then(response => {
         // handle success
         this.setState({
@@ -398,7 +398,7 @@ class LettersList extends React.Component {
 
   componentDidMount() {
     // Make request
-    axiosInstance().get(baseUrl + '/letters/list')
+    axiosInstance().get('/letters/list')
       .then(response => {
         // handle success
         this.setState({
@@ -450,7 +450,7 @@ class LettersList extends React.Component {
     }
 
     // Make edit request
-    axiosInstance().delete(baseUrl + '/letters/delete/' + this.state.currentLetter.id)
+    axiosInstance().delete('/letters/delete/' + this.state.currentLetter.id)
     .then(response => {      
       // hide modal
       this.state.deleteModal.hide();
@@ -503,7 +503,7 @@ class LettersList extends React.Component {
     }
 
     // Make edit request
-    axiosInstance().post(baseUrl + '/letters/edit/' + this.state.currentLetter.id, this.state.currentLetter)
+    axiosInstance().post('/letters/edit/' + this.state.currentLetter.id, this.state.currentLetter)
     .then(response => {
       const editedLetter = response.data;
       
@@ -623,7 +623,7 @@ class LettersList extends React.Component {
     }, () => this.state.viewModal.show());
 
     // Update letter and show modal
-    axiosInstance().get(baseUrl + '/letters/' + letter.id)
+    axiosInstance().get('/letters/' + letter.id)
     .then(response => {    
       const currentLetter = response.data;
 
@@ -658,7 +658,7 @@ class LettersList extends React.Component {
     }
 
     // Make request
-    axiosInstance().post(baseUrl + '/letters/adopt/' + this.state.currentLetter.id)
+    axiosInstance().post('/letters/adopt/' + this.state.currentLetter.id)
     .then(response => {      
       if (response.data) {
         // hide modal
@@ -691,7 +691,7 @@ class LettersList extends React.Component {
     }
 
     // Make request
-    axiosInstance().post(baseUrl + '/letters/abandon/' + this.state.currentLetter.id)
+    axiosInstance().post('/letters/abandon/' + this.state.currentLetter.id)
     .then(response => {      
       // hide modal
       this.state.viewModal.hide();
@@ -860,7 +860,7 @@ class LetterUploader extends React.Component {
       formData.append('file', file);
 
       try {
-        await axiosInstance().post(baseUrl + '/letters/add/file', formData, {
+        await axiosInstance().post('/letters/add/file', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -876,20 +876,21 @@ class LetterUploader extends React.Component {
           throw e;
         });
 
-        file.uploadProgress = 100;
+        file.uploadProgress = 101;
 
         // Define status
         const status = this.state.status === 'error' || this.state.status === 'partial-success' ? 'partial-success' : 'success';
 
-        this.setState({ status, files: this.state.files  });
+        this.setState({ status  });
       } catch (e) {
-        console.log(e);
+        const responseData = e.response.data;
         file.uploadProgress = -1;
+        file.error = responseData.errors[0];
 
         // Define status
         const status = this.state.status === 'success' || this.state.status === 'partial-success' ? 'partial-success' : 'error';
 
-        this.setState({ status, files: this.state.files  });
+        this.setState({ status  });
       }
     }
 
@@ -913,9 +914,14 @@ class LetterUploader extends React.Component {
           <div className="col-12 col-md-3">Nome: <strong>{file.name}</strong></div>
           <div className="col-12 col-md-2">Tamanho: <strong>{(file.size / 1024).toFixed(2)} KB</strong></div>
           <div className="col-12 col-md-3">Tipo: <strong>{file.type}</strong></div>
-          { file.uploadProgress === -1 ? 
-          <div className="col-12 col-md-3">Progresso: <strong>Erro</strong></div> :
+          { file.uploadProgress === -1 && 
+          <div className="col-12 col-md-3 text-danger">Progresso: <strong>Erro: {file.error}</strong></div>}
+          { file.uploadProgress >= 0 && file.uploadProgress <= 100 && 
           <div className="col-12 col-md-3">Progresso: <strong>{file.uploadProgress || 0} %</strong></div> }
+          { file.uploadProgress === 101 && 
+          <div className="col-12 col-md-3">Progresso: <span class="text-success"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check" viewBox="0 0 16 16">
+  <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
+</svg></span></div> }
         </div>);
       }
     }
@@ -1021,10 +1027,11 @@ if (storageUser != null) {
   reqInstance = axios.create({
     headers: {
       Authorization : `Bearer ${storageUser.accessToken}`
-      }
+    },
+    baseURL: baseUrl
   });
 
-  axiosInstance().get(baseUrl + '/users/loggedUser')
+  axiosInstance().get('/users/loggedUser')
   .then(response => {
     // handle success
     const user = {...storageUser, roles: response.data.roles.map(r => r.name)};

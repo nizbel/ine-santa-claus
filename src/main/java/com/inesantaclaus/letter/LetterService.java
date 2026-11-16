@@ -23,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -90,12 +91,13 @@ public class LetterService {
       fileExists = response != null && !response.contains("<Code>NoSuchKey</Code>");
     } catch (HttpClientErrorException e) {
       logger.error(e.getLocalizedMessage());
+
+      if (e.getLocalizedMessage().contains("<Code>SignatureDoesNotMatch</Code>")) {
+        throw new Exception("Nome de arquivo inválido");
+      }
     }
 
     if (fileExists) {
-      repository.findAll().forEach((letter) -> {
-        delete(letter.getId());
-      });
       throw new Exception("Arquivo já existe");
     }
 
@@ -106,7 +108,11 @@ public class LetterService {
     HttpEntity<byte[]> request = new HttpEntity<>(file.getBytes(), headers);
 
     // Post letter
-    restTemplate.put(s3Bucket + filename, request);
+    try {
+      restTemplate.put(s3Bucket + filename, request);
+    } catch (RestClientException e) {
+      throw new Exception(e.getLocalizedMessage());
+    }
 
     // Generate thumb
     BufferedImage original = ImageIO.read(file.getInputStream());
@@ -208,12 +214,16 @@ public class LetterService {
     return true;
   }
 
-  public boolean delete(Long id) {
+  public boolean delete(Long id) throws Exception {
+    // Check if letter is adopted
+    Letter letter = repository.findById(id).orElseThrow();
+
+    if (letter.getAdopter() != null) {
+      throw new Exception("Carta já foi adotada");
+    }
 
     // Check letter amount
     int initialAmount = repository.findAll().size();
-
-    Letter letter = repository.findById(id).orElseThrow();
 
     // Delete files related first
     for (String imagePath : letter.getImagePath()) {

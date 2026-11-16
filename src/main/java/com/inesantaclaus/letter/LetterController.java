@@ -1,18 +1,22 @@
 package com.inesantaclaus.letter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,16 +49,11 @@ public class LetterController {
 
   @PostMapping(value = "/add/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('ADMIN')")
-  public String createByUpload(@RequestPart(required = true, value = "files") MultipartFile files[]) throws Exception { 
-    System.out.println("FILES: " + files.length);
-    for (MultipartFile file : files) {
-      System.out.println(file.getOriginalFilename() + "->" + file.getSize());
-    }
-
-    service.createByFiles(files);
+  public ResponseEntity<String> createByUpload(@RequestBody  MultipartFile file) throws Exception { 
+    service.createByFile(file);
 
     logger.info("Saved");
-    return "File uploaded: " + files[0].getOriginalFilename();    
+    return ResponseEntity.ok("File uploaded: " + file.getOriginalFilename());
   }
 
   @PostMapping("/edit/{id}") 
@@ -78,9 +77,19 @@ public class LetterController {
     return service.abandon(id);
   }
 
-  @PostMapping("/delete/{id}") 
+  @DeleteMapping("/delete/{id}") 
 	@PreAuthorize("hasRole('ADMIN')")
   public Boolean delete(@PathVariable long id) throws Exception {
     return service.delete(id);
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ErrorMessage> handleException(Exception ex) {
+    ErrorMessage errorMessage = new ErrorMessage();
+      errorMessage.setTimestamp(LocalDateTime.now());
+      errorMessage.setCode(HttpStatus.BAD_REQUEST.value());
+      errorMessage.setStatus(HttpStatus.BAD_REQUEST.name());
+      errorMessage.setErrors(List.of(ex.getMessage()));
+    return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
   }
 }

@@ -367,6 +367,10 @@ function Letter(props) {
               <button type="button" className="btn btn-sm btn-outline-secondary"
                 onClick={props.onEdit}>Editar</button>
                 : null}
+              {isAdmin() && props.adopter === null ?
+              <button type="button" className="btn btn-sm btn-outline-secondary"
+                onClick={props.onDelete}>Apagar</button>
+                : null}
             </div>
             <small className="text-muted">{props.ineClass}</small>
           </div>
@@ -383,6 +387,7 @@ class LettersList extends React.Component {
       isLoading: true,
       letters: [],
       user: props.user,
+      deleteModal: null,
       editModal: null,
       viewModal: null,
       currentLetter: null,
@@ -410,6 +415,7 @@ class LettersList extends React.Component {
       });
 
     this.setState({
+      deleteModal: new bootstrap.Modal(document.getElementById('deleteModal')),
       editModal: new bootstrap.Modal(document.getElementById('editModal')),
       viewModal: new bootstrap.Modal(document.getElementById('viewModal'))
     });
@@ -422,6 +428,45 @@ class LettersList extends React.Component {
         </div>
       </div>
     );
+  }
+
+  showDeleteModal(letter) {
+    // Has to be admin
+    if (!isAdmin()) {
+      return;
+    }
+
+    this.state.deleteModal.show();
+    this.setState({
+      currentLetter: letter
+    });
+  }
+
+  handleDelete(event) {
+    event.preventDefault();
+    // Has to be admin
+    if (!isAdmin()) {
+      return;
+    }
+
+    // Make edit request
+    axiosInstance().delete(baseUrl + '/letters/delete/' + this.state.currentLetter.id)
+    .then(response => {      
+      // hide modal
+      this.state.deleteModal.hide();
+
+      const letters = [...this.state.letters.filter(letter => letter.id !== this.state.currentLetter.id)];
+      // update letter
+      this.setState({
+        currentLetter: null,
+        letters: letters
+      })
+
+    })
+    .catch(error => {
+      // handle error
+      console.log(error);
+    });
   }
 
   showEditModal(letter) {
@@ -477,6 +522,42 @@ class LettersList extends React.Component {
       // handle error
       console.log(error);
     });
+  }
+
+  renderDeleteModal() {
+    const letter = this.state.currentLetter;
+
+    // Check if letter available
+    const letterAvailable = letter != null && letter;
+
+    const title = letterAvailable ? `Deseja apagar a carta de ${letter.name} do ${letter.ineClass}?` : '';
+
+    const form = letterAvailable ? 
+      (
+        <form method="post" onSubmit={(e) => this.handleDelete(e)}>  
+          <div className="d-flex justify-content-between">
+            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" className="btn btn-primary">Apagar</button>
+          </div>
+        </form>
+      ): (null);
+
+    return (
+      <div className="modal fade" id="deleteModal" tabIndex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-scrollable" role="document" 
+        style={{position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)"}}>
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title" id="viewModalLabel">{title}</h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div className="modal-footer flex-column align-items-stretch">        
+                {form}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   renderEditModal() {
@@ -691,7 +772,11 @@ class LettersList extends React.Component {
         return;
       } else if (this.state.visualizationType === 'myAdopted' && (!letter.adopter || letter.adopter.id !== this.state.user.id)) {
         return;
-      }
+      } else if (this.state.visualizationType === 'unfinished' && (letter.giftSuggestion !== null && letter.giftSuggestion.trim().length > 0)
+        && (letter.name !== null && letter.name.trim().length > 0) && (letter.ineClass !== null && letter.ineClass.trim().length > 0)
+       && (letter.age > 0)) {
+        return;
+       }
 
       letters.push(
         <Letter
@@ -702,6 +787,8 @@ class LettersList extends React.Component {
           giftSuggestion={letter.giftSuggestion || 'Sem sugestão de presente, favor ler a carta'}
           images={letter.imagePath}
           age={letter.age}
+          adopter={letter.adopter}
+          onDelete={() => this.showDeleteModal(letter)}
           onEdit={() => this.showEditModal(letter)}
           onVisualize={() => this.showViewModal(letter)}
         />);
@@ -723,6 +810,10 @@ class LettersList extends React.Component {
               <button type="button" onClick={() => this.changeVisualizationType('myAdopted')}
               className={`btn btn-sm btn-outline-secondary ${this.state.visualizationType  == 'myAdopted' ? 'active': ''}`}
                 >Minhas cartas</button>
+              { isAdmin() &&
+              <button type="button" onClick={() => this.changeVisualizationType('unfinished')}
+              className={`btn btn-sm btn-outline-secondary ${this.state.visualizationType  == 'unfinished' ? 'active': ''}`}
+                >A editar</button>}
             </div>
             <div className="row text-center mt-3">
               <h4>{letters.length} cartas</h4>
@@ -730,19 +821,10 @@ class LettersList extends React.Component {
             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
               {letters}
             </div>
-            <div class="toast" id="myToast">
-              <div class="toast-header">
-                  <strong class="me-auto"><i class="bi-gift-fill"></i> We miss you!</strong>
-                  <small>10 mins ago</small>
-                  <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-              </div>
-              <div class="toast-body">
-                  It's been a long time since you visited us. We've something special for you. <a href="#">Click here!</a>
-              </div>
-          </div>
           </div>
         }
 
+        {this.renderDeleteModal()}
         {this.renderEditModal()}
         {this.renderViewModal()}
       </div>
@@ -756,8 +838,7 @@ class LetterUploader extends React.Component {
     super(props);
     this.state = {
       files: null,
-      status: 'idle',
-      uploadProgress: 0
+      status: 'idle'
     }
   }
 
@@ -770,85 +851,106 @@ class LetterUploader extends React.Component {
   async handleFileUpload() {
     if (!this.state.files) return;
 
-    this.setState({ status: 'uploading', uploadProgress: 0 });
+    this.setState({ status: 'uploading' });
 
-    const formData = new FormData();
     for (let i = 0; i < this.state.files.length; i++) {
       const file = this.state.files[i];
-      formData.append('files', file);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        await axiosInstance().post(baseUrl + '/letters/add/file', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            const progress = progressEvent.total
+              ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              : 0;
+          file.uploadProgress = progress;
+
+          this.setState({ files: this.state.files });
+          },
+        }).catch((e) => {
+          throw e;
+        });
+
+        file.uploadProgress = 100;
+
+        // Define status
+        const status = this.state.status === 'error' || this.state.status === 'partial-success' ? 'partial-success' : 'success';
+
+        this.setState({ status, files: this.state.files  });
+      } catch (e) {
+        console.log(e);
+        file.uploadProgress = -1;
+
+        // Define status
+        const status = this.state.status === 'success' || this.state.status === 'partial-success' ? 'partial-success' : 'error';
+
+        this.setState({ status, files: this.state.files  });
+      }
     }
 
-    try {
-      await axiosInstance().post(baseUrl + '/letters/add/file', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (progressEvent) => {
-          const progress = progressEvent.total
-            ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            : 0;
-        this.setState({ uploadProgress: progress });
-        },
-      });
-
-      this.setState({ status: 'success', uploadProgress: 100 });
-
+    // Check if any upload was successful
+    if (this.state.status === 'success' || this.state.status === 'partial-success') {
       reloadLetters();
-    } catch (e) {
-      console.log(e);
-      this.setState({ status: 'error', uploadProgress: 0 });
     }
+
   }
 
   render() {
     const files = [];
     const status = this.state.status;
-    const uploadProgress = this.state.uploadProgress;
 
     if (this.state.files) {
       for (let i = 0; i < this.state.files.length; i++) {
         const file = this.state.files[i];
 
-        files.push(<div className="m-2 row">
+        files.push(
+        <div className="m-2 row">
           <div className="col-12 col-md-3">Nome: <strong>{file.name}</strong></div>
           <div className="col-12 col-md-2">Tamanho: <strong>{(file.size / 1024).toFixed(2)} KB</strong></div>
           <div className="col-12 col-md-3">Tipo: <strong>{file.type}</strong></div>
+          { file.uploadProgress === -1 ? 
+          <div className="col-12 col-md-3">Progresso: <strong>Erro</strong></div> :
+          <div className="col-12 col-md-3">Progresso: <strong>{file.uploadProgress || 0} %</strong></div> }
         </div>);
       }
     }
 
     return (
       <div>
-        <div className="m-2 d-flex justify-content-between">
+        <div className="m-2 d-flex">
           <input type="file" className="btn btn-primary" multiple onChange={(e) => this.handleFileChange(e)} 
             accept="image/jpg, image/jpeg"/>
 
           {files.length > 0 && status !== 'uploading' && (
-            <button type="button" className="btn btn-primary" onClick={() => this.handleFileUpload()}>Upload</button>
+            <button type="button" className="btn btn-primary mx-5" onClick={() => this.handleFileUpload()}>Upload</button>
           )}
         </div>
 
         {files}
 
-        {status === 'uploading' && (
-          <div className="m-2">
-            <div className="h-2.5 w-full rounded-full bg-gray-200">
-              <div
-                className="h-2.5 rounded-full bg-blue-600 transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-            <p className="text-sm text-gray-600">{uploadProgress}% carregado</p>
-          </div>
-        )}
+        <div className="m-2 row">
 
-        {status === 'success' && (
-          <p className="text-sm text-green-600">Arquivos enviados com sucesso!</p>
-        )}
+          {status === 'uploading' && (
+            <p className="lead text-muted">Realizando upload</p>
+          )}
 
-        {status === 'error' && (
-          <p className="text-sm text-red-600">Upload falhou. Por favor tente novamente.</p>
-        )}
+          {status === 'success' && (
+            <p className="lead text-muted">Arquivos enviados com sucesso!</p>
+          )}
+
+          {status === 'partial-success' && (
+            <p className="text-sm text-red-600">Alguns arquivos enviados com sucesso</p>
+          )}
+
+          {status === 'error' && (
+            <p className="text-sm text-red-600">Upload falhou. Por favor tente novamente</p>
+          )}
+        </div>
       </div>
     );
   }

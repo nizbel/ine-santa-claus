@@ -952,8 +952,11 @@ class LetterUploader extends React.Component {
     }
 
     // Check if any upload was successful
-    if (this.state.status === 'success' || this.state.status === 'partial-success') {
-      reloadLetters();
+    for (let i = 0; i < this.state.files.length; i++) {
+      if (this.state.files[i].uploadProgress === 101) {
+        reloadLetters();
+        break;
+      }
     }
 
   }

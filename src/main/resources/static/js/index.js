@@ -629,7 +629,7 @@ class LettersList extends React.Component {
         <form method="post" onSubmit={(e) => this.handleEdit(e)}>  
           <div className="d-flex mb-3">  
             <div className="form-floating flex-fill me-5">
-              <input type="text" className="form-control ms-3" name="name" value={letter.name} 
+              <input type="text" className="form-control" name="name" value={letter.name} 
                 placeholder="" onChange={(e) => this.handleLetterEditInput(e)}/>
               <label htmlFor="floatingInput">Nome</label>
             </div>

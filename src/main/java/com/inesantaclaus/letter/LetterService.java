@@ -140,10 +140,11 @@ public class LetterService {
     // Post thumb
     restTemplate.put(s3Bucket + thumbFilename, request);
 
+    // Prepare letter
     String[] fileNameParts = filename.split("[_\\-\\.]");
 
-    String name = "";
-    String ineClass = "";
+    String name = "Nome";
+    String ineClass = "Turma";
     List<String> images = new ArrayList<String>(Arrays.asList(
       s3Bucket + filename, s3Bucket + thumbFilename));
 
@@ -156,7 +157,7 @@ public class LetterService {
 
       if (part.toLowerCase().startsWith("kids") || part.toLowerCase().startsWith("teens")) {
         ineClass = part.replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2");
-      } else if (name.equals("")) {
+      } else if (name.equals("Nome")) {
         name = part.replaceAll("(\\p{Ll})(\\p{Lu})","$1 $2");
       }
     }
